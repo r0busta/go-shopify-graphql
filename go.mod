@@ -1,4 +1,4 @@
-module shopifygraphql
+module github.com/r0busta/go-shopify-graphql
 
 go 1.12
 
