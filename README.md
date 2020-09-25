@@ -1,12 +1,20 @@
 # go-shopify-graphql
 
-Simple go client for the Shopify's GraphQL Admin API.
-
-The client is just a wrapper for the `github.com/shurcooL/graphql`, so check the usage docs at [github.com/shurcooL/graphql](github.com/shurcooL/graphql)
+A simple Shopify client using the Shopify's GraphQL Admin API.
 
 ## Getting started
 
 A Hello World example
+
+### 0. Setup
+
+```bash
+export STORE_API_KEY=<private_app_api_key>
+export STORE_PASSWORD=<private_app_password>
+export STORE_NAME=<store_name>
+```
+
+### 1. Program
 
 ```go
 package main
@@ -14,39 +22,28 @@ package main
 import (
     "fmt"
 
-    shopifygraphql "github.com/r0busta/go-shopify-graphql"
-    "github.com/shurcooL/graphql"
+    shopify "github.com/r0busta/go-shopify-graphql"
 )
 
-func main(){
+func main() {
     // Create client
-    opts := []shopifygraphql.Option{
-        shopifygraphql.WithVersion("2019-10"),
-        shopifygraphql.WithPrivateAppAuth(<YOUR_PRIVATE_APP_KEY>, <YOUR_PRIVATE_APP_PASSWORD>),
-    }
+    client := shopify.NewDefaultClient()
 
-    client := shopifygraphql.NewClient(<YOUR_STORE_NAME>, opts...)
-
-    // Get first 100 products
-    var q struct {
-        Products struct {
-            Edges []struct {
-                Node struct {
-                    ID    graphql.ID
-                    Title graphql.String
-                }
-            }
-        } `graphql:"products(first: $first)"`
-    }
-    vars := map[string]interface{}{
-        "first": graphql.Int(100),
-    }
-
-    err := client.Query(context.Background(), &q, vars)
+    // Get all collections
+    collections, err := client.Collection.ListAll()
     if err != nil {
         panic(err)
     }
 
-    fmt.Printf("%+v", q)
+    // Print out the result
+    for _, c := range collections {
+        fmt.Println(c.Handle)
+    }
 }
+```
+
+### 3. Run
+
+```bash
+go run .
 ```

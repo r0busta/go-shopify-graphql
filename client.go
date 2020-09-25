@@ -1,83 +1,57 @@
-package shopifygraphql
+package shopify
 
 import (
-	"fmt"
-	"net/http"
+	"log"
+	"os"
 
+	graphqlclient "github.com/r0busta/go-shopify-graphql/graphql"
 	"github.com/shurcooL/graphql"
 )
 
 const (
-	shopifyBaseDomain        = "myshopify.com"
-	shopifyAccessTokenHeader = "X-Shopify-Access-Token"
+	shopifyAPIVersion = "2020-10"
 )
 
-var (
-	apiProtocol   = "https"
-	apiPathPrefix = "admin/api"
-	apiEndpoint   = "graphql.json"
-)
+type Client struct {
+	gql *graphql.Client
 
-// Option is used to configure options
-type Option func(t *transport)
-
-// WithVersion optionally sets the API version if the passed string is valid
-func WithVersion(apiVersion string) Option {
-	return func(t *transport) {
-		if apiVersion != "" {
-			apiPathPrefix = fmt.Sprintf("admin/api/%s", apiVersion)
-		} else {
-			apiPathPrefix = "admin/api"
-		}
-	}
+	Product       ProductService
+	Collection    CollectionService
+	BulkOperation BulkOperationService
 }
 
-// WithToken optionally sets oauth token
-func WithToken(token string) Option {
-	return func(t *transport) {
-		t.accessToken = token
-	}
+type UserErrors struct {
+	Field   []graphql.String
+	Message graphql.String
 }
 
-// WithPrivateAppAuth optionally sets private app credentials
-func WithPrivateAppAuth(apiKey string, password string) Option {
-	return func(t *transport) {
-		t.apiKey = apiKey
-		t.password = password
-	}
-}
-
-type transport struct {
-	accessToken string
-	apiKey      string
-	password    string
-}
-
-func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	if t.accessToken != "" {
-		req.Header.Set(shopifyAccessTokenHeader, t.accessToken)
-	} else if t.apiKey != "" && t.password != "" {
-		req.SetBasicAuth(t.apiKey, t.password)
+func NewDefaultClient() (shopClient *Client) {
+	apiKey := os.Getenv("STORE_API_KEY")
+	password := os.Getenv("STORE_PASSWORD")
+	storeName := os.Getenv("STORE_NAME")
+	if apiKey == "" || password == "" || storeName == "" {
+		log.Panicln("Shopify app API Key and/or Password and/or Store Name not set")
 	}
 
-	return http.DefaultTransport.RoundTrip(req)
+	shopClient = NewClient(apiKey, password, storeName)
+
+	return
 }
 
-// NewClient creates a new client (in fact, just a simple wrapper for a graphql.Client)
-func NewClient(shopName string, opts ...Option) *graphql.Client {
-	transport := &transport{}
+func NewClient(apiKey string, password string, storeName string) *Client {
+	c := &Client{gql: newShopifyGraphQLClient(apiKey, password, storeName)}
 
-	for _, opt := range opts {
-		opt(transport)
+	c.Product = &ProductServiceOp{client: c}
+	c.Collection = &CollectionServiceOp{client: c}
+	c.BulkOperation = &BulkOperationServiceOp{client: c}
+
+	return c
+}
+
+func newShopifyGraphQLClient(apiKey string, password string, storeName string) *graphql.Client {
+	opts := []graphqlclient.Option{
+		graphqlclient.WithVersion(shopifyAPIVersion),
+		graphqlclient.WithPrivateAppAuth(apiKey, password),
 	}
-
-	httpClient := &http.Client{Transport: transport}
-
-	url := buildAPIEndpoint(shopName)
-
-	return graphql.NewClient(url, httpClient)
-}
-
-func buildAPIEndpoint(shopName string) string {
-	return fmt.Sprintf("%s://%s.%s/%s/%s", apiProtocol, shopName, shopifyBaseDomain, apiPathPrefix, apiEndpoint)
+	return graphqlclient.NewClient(storeName, opts...)
 }

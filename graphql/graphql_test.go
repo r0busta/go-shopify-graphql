@@ -1,4 +1,4 @@
-package shopifygraphql
+package graphqlclient
 
 import (
 	"fmt"
