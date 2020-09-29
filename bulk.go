@@ -113,7 +113,6 @@ func (s *BulkOperationServiceOp) getBulkQueryResult() (url string, err error) {
 	}
 
 	if q.CurrentBulkOperation.ObjectCount == "0" {
-		err = fmt.Errorf("No results")
 		return
 	}
 
@@ -176,7 +175,7 @@ func (s *BulkOperationServiceOp) BulkQuery(query string, out interface{}) (err e
 	}
 
 	url, err := s.getBulkQueryResult()
-	if err != nil {
+	if err != nil || url == "" {
 		return
 	}
 
