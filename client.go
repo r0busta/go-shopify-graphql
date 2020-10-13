@@ -16,6 +16,7 @@ type Client struct {
 	gql *graphql.Client
 
 	Product       ProductService
+	Variant       VariantService
 	Collection    CollectionService
 	BulkOperation BulkOperationService
 }
@@ -42,6 +43,7 @@ func NewClient(apiKey string, password string, storeName string) *Client {
 	c := &Client{gql: newShopifyGraphQLClient(apiKey, password, storeName)}
 
 	c.Product = &ProductServiceOp{client: c}
+	c.Variant = &VariantServiceOp{client: c}
 	c.Collection = &CollectionServiceOp{client: c}
 	c.BulkOperation = &BulkOperationServiceOp{client: c}
 

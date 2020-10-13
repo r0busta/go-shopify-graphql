@@ -4,12 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/shurcooL/graphql"
 )
 
 type ProductService interface {
+	List(query string) ([]*Product, error)
 	ListAll() ([]*Product, error)
+
+	Get(gid graphql.ID) (*Product, error)
 
 	Create(product *ProductCreate) error
 	CreateBulk(products []*ProductCreate) error
@@ -26,8 +30,29 @@ type ProductServiceOp struct {
 }
 
 type Product struct {
-	ID     graphql.ID     `json:"id,omitempty"`
-	Handle graphql.String `json:"handle,omitempty"`
+	ID      graphql.ID       `json:"id,omitempty"`
+	Handle  graphql.String   `json:"handle,omitempty"`
+	Options []ProductOption  `json:"options,omitempty"`
+	Tags    []graphql.String `json:"tags,omitempty"`
+
+	Variants struct {
+		Edges []ProductVariantNode `json:"edges,omitempty"`
+	} `graphql:"variants(first: 250)" json:"variants,omitempty"`
+}
+
+type ProductShort struct {
+	ID     graphql.ID       `json:"id,omitempty"`
+	Handle graphql.String   `json:"handle,omitempty"`
+	Tags   []graphql.String `json:"tags,omitempty"`
+}
+
+type ProductVariantNode struct {
+	Node ProductVariant `json:"node,omitempty"`
+}
+
+type ProductOption struct {
+	Name   graphql.String   `json:"name,omitempty"`
+	Values []graphql.String `json:"values,omitempty"`
 }
 
 type ProductCreate struct {
@@ -201,6 +226,11 @@ func (s *ProductServiceOp) ListAll() ([]*Product, error) {
 					node{
 						id
 						handle
+						options{
+							name
+							values
+						}
+						tags					  
 					}
 				}
 			}
@@ -214,6 +244,51 @@ func (s *ProductServiceOp) ListAll() ([]*Product, error) {
 	}
 
 	return res, nil
+}
+
+func (s *ProductServiceOp) List(query string) ([]*Product, error) {
+	q := `
+		{
+			products(query: "$query"){
+				edges{
+					node{
+						id
+						handle
+						options{
+							name
+							values
+						}
+						tags					  
+					}
+				}
+			}
+		}
+`
+	q = strings.ReplaceAll(q, "$query", query)
+
+	res := []*Product{}
+	err := s.client.BulkOperation.BulkQuery(q, &res)
+	if err != nil {
+		return []*Product{}, err
+	}
+
+	return res, nil
+}
+
+func (s *ProductServiceOp) Get(id graphql.ID) (*Product, error) {
+	var q struct {
+		Product `graphql:"product(id: $id)"`
+	}
+	vars := map[string]interface{}{
+		"id": id,
+	}
+
+	err := s.client.gql.Query(context.Background(), &q, vars)
+	if err != nil {
+		return nil, err
+	}
+
+	return &q.Product, nil
 }
 
 func (s *ProductServiceOp) CreateBulk(products []*ProductCreate) error {

@@ -1,13 +1,43 @@
 package shopify
 
-import "github.com/shurcooL/graphql"
+import (
+	"context"
+	"fmt"
+
+	"github.com/shurcooL/graphql"
+)
+
+type VariantService interface {
+	Update(variant *ProductVariantUpdate) error
+}
+
+type VariantServiceOp struct {
+	client *Client
+}
+
+type ProductVariant struct {
+	ID                graphql.ID       `json:"id,omitempty"`
+	SelectedOptions   []SelectedOption `json:"selectedOption,omitempty"`
+	CompareAtPrice    Money            `json:"compareAtPrice,omitempty"`
+	Price             Money            `json:"price,omitempty"`
+	InventoryQuantity graphql.Int      `json:"inventoryQuantity,omitempty"`
+}
+
+type SelectedOption struct {
+	Name  graphql.String `json:"name,omitempty"`
+	Value graphql.String `json:"value,omitempty"`
+}
+
+type ProductVariantUpdate struct {
+	ProductVariantInput ProductVariantInput
+}
 
 type ProductVariantInput struct {
 	// The value of the barcode associated with the product.
 	Barcode graphql.String `json:"barcode,omitempty"`
 
 	// The compare-at price of the variant.
-	CompareAtPrice Money `json:"compareAtPrice,omitempty"`
+	CompareAtPrice *Money `json:"compareAtPrice"`
 
 	// The ID of the fulfillment service associated with the variant.
 	FulfillmentServiceID graphql.ID `json:"fulfillmentServiceId,omitempty"`
@@ -83,11 +113,39 @@ type InventoryItemInput struct {
 	Tracked graphql.Boolean `json:"tracked,omitempty"`
 }
 
-type ProductVariantInventoryPolicy string // String enum: CONTINUE, DENY
+// ProductVariantInventoryPolicy String enum: CONTINUE, DENY
+type ProductVariantInventoryPolicy string
 
 type InventoryLevelInput struct {
 	AvailableQuantity graphql.Int `json:"availableQuantity"`
 	LocationID        graphql.ID  `json:"locationId"`
 }
 
-type WeightUnit string // String enum: GRAMS, KILOGRAMS, OUNCES, POUNDS
+// WeightUnit String enum: GRAMS, KILOGRAMS, OUNCES, POUNDS
+type WeightUnit string
+
+type mutationProductVariantUpdate struct {
+	ProductVariantUpdateResult productVariantUpdateResult `graphql:"productVariantUpdate(input: $input)"`
+}
+
+type productVariantUpdateResult struct {
+	UserErrors []UserErrors
+}
+
+func (s *VariantServiceOp) Update(variant *ProductVariantUpdate) error {
+	m := mutationProductVariantUpdate{}
+
+	vars := map[string]interface{}{
+		"input": variant.ProductVariantInput,
+	}
+	err := s.client.gql.Mutate(context.Background(), &m, vars)
+	if err != nil {
+		return err
+	}
+
+	if len(m.ProductVariantUpdateResult.UserErrors) > 0 {
+		return fmt.Errorf("%+v", m.ProductVariantUpdateResult.UserErrors)
+	}
+
+	return nil
+}

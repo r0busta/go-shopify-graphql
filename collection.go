@@ -11,6 +11,8 @@ import (
 type CollectionService interface {
 	ListAll() ([]*Collection, error)
 
+	Get(id graphql.ID) (*Collection, error)
+
 	Create(collection *CollectionCreate) error
 	CreateBulk(collections []*CollectionCreate) error
 }
@@ -20,8 +22,17 @@ type CollectionServiceOp struct {
 }
 
 type Collection struct {
-	ID     graphql.ID     `json:"id,omitempty"`
-	Handle graphql.String `json:"handle,omitempty"`
+	ID            graphql.ID     `json:"id,omitempty"`
+	Handle        graphql.String `json:"handle,omitempty"`
+	ProductsCount graphql.Int    `json:"productsCount,omitempty"`
+
+	Products struct {
+		Edges []ProductShortNode `json:"edges,omitempty"`
+	} `graphql:"products(first: 100)" json:"products,omitempty"`
+}
+
+type ProductShortNode struct {
+	Node ProductShort `json:"node,omitempty"`
 }
 
 type CollectionCreate struct {
@@ -157,6 +168,22 @@ func (s *CollectionServiceOp) ListAll() ([]*Collection, error) {
 	}
 
 	return res, nil
+}
+
+func (s *CollectionServiceOp) Get(id graphql.ID) (*Collection, error) {
+	var q struct {
+		Collection `graphql:"collection(id: $id)"`
+	}
+	vars := map[string]interface{}{
+		"id": id,
+	}
+
+	err := s.client.gql.Query(context.Background(), &q, vars)
+	if err != nil {
+		return nil, err
+	}
+
+	return &q.Collection, nil
 }
 
 func (s *CollectionServiceOp) CreateBulk(collections []*CollectionCreate) error {
