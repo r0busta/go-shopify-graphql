@@ -13,8 +13,10 @@ type CollectionService interface {
 
 	Get(id graphql.ID) (*Collection, error)
 
-	Create(collection *CollectionCreate) error
+	Create(collection *CollectionCreate) (graphql.ID, error)
 	CreateBulk(collections []*CollectionCreate) error
+
+	Update(collection *CollectionCreate) error
 }
 
 type CollectionServiceOp struct {
@@ -41,6 +43,10 @@ type CollectionCreate struct {
 
 type mutationCollectionCreate struct {
 	CollectionCreateResult CollectionCreateResult `graphql:"collectionCreate(input: $input)"`
+}
+
+type mutationCollectionUpdate struct {
+	CollectionCreateResult CollectionCreateResult `graphql:"collectionUpdate(input: $input)"`
 }
 
 type CollectionInput struct {
@@ -188,7 +194,7 @@ func (s *CollectionServiceOp) Get(id graphql.ID) (*Collection, error) {
 
 func (s *CollectionServiceOp) CreateBulk(collections []*CollectionCreate) error {
 	for _, c := range collections {
-		err := s.client.Collection.Create(c)
+		_, err := s.client.Collection.Create(c)
 		if err != nil {
 			log.Printf("Warning! Couldn't create collection (%v): %s", c, err)
 		}
@@ -197,8 +203,28 @@ func (s *CollectionServiceOp) CreateBulk(collections []*CollectionCreate) error 
 	return nil
 }
 
-func (s *CollectionServiceOp) Create(collection *CollectionCreate) error {
+func (s *CollectionServiceOp) Create(collection *CollectionCreate) (graphql.ID, error) {
+	var id graphql.ID
 	m := mutationCollectionCreate{}
+
+	vars := map[string]interface{}{
+		"input": collection.CollectionInput,
+	}
+	err := s.client.gql.Mutate(context.Background(), &m, vars)
+	if err != nil {
+		return id, err
+	}
+
+	if len(m.CollectionCreateResult.UserErrors) > 0 {
+		return id, fmt.Errorf("%+v", m.CollectionCreateResult.UserErrors)
+	}
+
+	id = m.CollectionCreateResult.Collection.ID
+	return id, nil
+}
+
+func (s *CollectionServiceOp) Update(collection *CollectionCreate) error {
+	m := mutationCollectionUpdate{}
 
 	vars := map[string]interface{}{
 		"input": collection.CollectionInput,
