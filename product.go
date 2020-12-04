@@ -30,14 +30,19 @@ type ProductServiceOp struct {
 }
 
 type Product struct {
-	ID      graphql.ID       `json:"id,omitempty"`
-	Handle  graphql.String   `json:"handle,omitempty"`
-	Options []ProductOption  `json:"options,omitempty"`
-	Tags    []graphql.String `json:"tags,omitempty"`
-
-	Variants struct {
-		Edges []ProductVariantNode `json:"edges,omitempty"`
-	} `graphql:"variants(first: 250)" json:"variants,omitempty"`
+	ID               graphql.ID          `json:"id,omitempty"`
+	LegacyResourceID graphql.String      `json:"legacyResourceId,omitempty"`
+	Handle           graphql.String      `json:"handle,omitempty"`
+	Options          []ProductOption     `json:"options,omitempty"`
+	Tags             []graphql.String    `json:"tags,omitempty"`
+	Description      graphql.String      `json:"description,omitempty"`
+	Title            graphql.String      `json:"title,omitempty"`
+	PriceRangeV2     ProductPriceRangeV2 `json:"priceRangeV2,omitempty"`
+	ProductType      graphql.String      `json:"productType,omitempty"`
+	Vendor           graphql.String      `json:"vendor,omitempty"`
+	TotalInventory   graphql.Int         `json:"totalInventory,omitempty"`
+	OnlineStoreURL   graphql.String      `json:"onlineStoreUrl,omitempty"`
+	ProductVariants  []ProductVariant    `json:"variants,omitempty"`
 }
 
 type ProductShort struct {
@@ -46,13 +51,14 @@ type ProductShort struct {
 	Tags   []graphql.String `json:"tags,omitempty"`
 }
 
-type ProductVariantNode struct {
-	Node ProductVariant `json:"node,omitempty"`
-}
-
 type ProductOption struct {
 	Name   graphql.String   `json:"name,omitempty"`
 	Values []graphql.String `json:"values,omitempty"`
+}
+
+type ProductPriceRangeV2 struct {
+	MinVariantPrice MoneyV2 `json:"minVariantPrice,omitempty"`
+	MaxVariantPrice MoneyV2 `json:"maxVariantPrice,omitempty"`
 }
 
 type ProductCreate struct {
@@ -225,12 +231,44 @@ func (s *ProductServiceOp) ListAll() ([]*Product, error) {
 				edges{
 					node{
 						id
+						legacyResourceId
 						handle
 						options{
 							name
 							values
 						}
-						tags					  
+						tags
+						title
+						description
+						priceRangeV2{
+							minVariantPrice{
+								amount
+								currencyCode
+							}
+							maxVariantPrice{
+								amount
+								currencyCode
+							}
+						}
+						productType
+						vendor
+						totalInventory
+						onlineStoreUrl
+						variants{
+							edges{
+								node{
+									id
+									legacyResourceId
+									selectedOptions{
+										name
+										value
+									}
+									compareAtPrice
+									price
+									inventoryQuantity
+								}
+							}
+						}
 					}
 				}
 			}
@@ -253,12 +291,44 @@ func (s *ProductServiceOp) List(query string) ([]*Product, error) {
 				edges{
 					node{
 						id
+						legacyResourceId
 						handle
 						options{
 							name
 							values
 						}
-						tags					  
+						tags
+						title
+						description
+						priceRangeV2{
+							minVariantPrice{
+								amount
+								currencyCode
+							}
+							maxVariantPrice{
+								amount
+								currencyCode
+							}
+						}
+						productType
+						vendor
+						totalInventory
+						onlineStoreUrl		
+						variants{
+							edges{
+								node{
+									id
+									legacyResourceId
+									selectedOptions{
+										name
+										value
+									}
+									compareAtPrice
+									price
+									inventoryQuantity
+								}
+							}
+						}		  
 					}
 				}
 			}
