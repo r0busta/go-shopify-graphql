@@ -17,7 +17,8 @@ type VariantServiceOp struct {
 
 type ProductVariant struct {
 	ID                graphql.ID       `json:"id,omitempty"`
-	SelectedOptions   []SelectedOption `json:"selectedOption,omitempty"`
+	LegacyResourceID  graphql.String   `json:"legacyResourceId,omitempty"`
+	SelectedOptions   []SelectedOption `json:"selectedOptions,omitempty"`
 	CompareAtPrice    Money            `json:"compareAtPrice,omitempty"`
 	Price             Money            `json:"price,omitempty"`
 	InventoryQuantity graphql.Int      `json:"inventoryQuantity,omitempty"`
@@ -26,6 +27,11 @@ type ProductVariant struct {
 type SelectedOption struct {
 	Name  graphql.String `json:"name,omitempty"`
 	Value graphql.String `json:"value,omitempty"`
+}
+
+type ProductVariantPricePair struct {
+	CompareAtPrice Money `json:"compareAtPrice,omitempty"`
+	Price          Money `json:"price,omitempty"`
 }
 
 type ProductVariantUpdate struct {
@@ -62,6 +68,9 @@ type ProductVariantInput struct {
 
 	// Create only field. The inventory quantities at each location where the variant is stocked.
 	InventoryQuantities []InventoryLevelInput `json:"inventoryQuantities,omitempty"`
+
+	// The ID of the corresponding resource in the REST Admin API.
+	LegacyResourceID graphql.String `json:"legacyResourceId,omitempty"`
 
 	// Additional customizable information about the product variant.
 	Metafields []MetafieldInput `json:"metafields,omitempty"`
@@ -102,9 +111,6 @@ type ProductVariantInput struct {
 	// The unit of weight that's used to measure the variant.
 	WeightUnit WeightUnit `json:"weightUnit,omitempty"`
 }
-
-type Money string   // Serialized and truncated to 2 decimals decimal.Decimal
-type Decimal string // Serialized decimal.Decimal
 
 type InventoryItemInput struct {
 	// Unit cost associated with the inventory item, the currency is the shop's default currency.
