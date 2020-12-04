@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -67,6 +68,12 @@ type bulkOperationCancelResult struct {
 
 type mutationBulkOperationRunQueryCancel struct {
 	BulkOperationCancelResult bulkOperationCancelResult `graphql:"bulkOperationCancel(id: $id)"`
+}
+
+var gidRegex *regexp.Regexp
+
+func init() {
+	gidRegex = regexp.MustCompile(`^gid://shopify/(\w+)/\d+$`)
 }
 
 func (s *BulkOperationServiceOp) postBulkQuery(query string) error {
@@ -223,6 +230,8 @@ func parseBulkQueryResult(resultFile string, out interface{}) (err error) {
 	reader := bufio.NewReader(f)
 	json := jsoniter.ConfigFastest
 
+	childrenLookup := make(map[string]interface{})
+
 	for {
 		var line []byte
 		line, err = reader.ReadBytes('\n')
@@ -230,16 +239,65 @@ func parseBulkQueryResult(resultFile string, out interface{}) (err error) {
 			break
 		}
 
-		itemVal := reflect.New(itemType)
-		err = json.Unmarshal(line, itemVal.Interface())
+		parentID := json.Get(line, "__parentId")
+		if parentID.LastError() == nil {
+			gid := json.Get(line, "id")
+			if gid.LastError() != nil {
+				return fmt.Errorf("Connection type must query `id` field")
+			}
+			childObjType, childrenFieldName, err := concludeObjectType(gid.ToString())
+			if err != nil {
+				return err
+			}
+			childItem := reflect.New(childObjType).Interface()
+			err = json.Unmarshal(line, &childItem)
+			if err != nil {
+				return err
+			}
+			childItemVal := reflect.ValueOf(childItem).Elem()
+
+			var childrenSlice reflect.Value
+			var children map[string]interface{}
+			if c, ok := childrenLookup[parentID.ToString()]; ok {
+				children = c.(map[string]interface{})
+				childrenSlice = reflect.ValueOf(children[childrenFieldName])
+			} else {
+				children = make(map[string]interface{})
+				childrenSlice = reflect.MakeSlice(reflect.SliceOf(childObjType), 0, 10)
+			}
+			childrenSlice = reflect.Append(childrenSlice, childItemVal)
+
+			children[childrenFieldName] = childrenSlice.Interface()
+			childrenLookup[parentID.ToString()] = children
+
+			continue
+		}
+
+		item := reflect.New(itemType).Interface()
+		err = json.Unmarshal(line, &item)
 		if err != nil {
 			return
 		}
+		itemVal := reflect.ValueOf(item)
 
 		if sliceItemKind == reflect.Ptr {
 			outSlice.Set(reflect.Append(outSlice, itemVal))
 		} else {
 			outSlice.Set(reflect.Append(outSlice, itemVal.Elem()))
+		}
+	}
+
+	for i := 0; i < outSlice.Len(); i++ {
+		parent := outSlice.Index(i).Elem()
+		parentID := parent.FieldByName("ID").Interface().(string)
+		if children, ok := childrenLookup[parentID]; ok {
+			childrenVal := reflect.ValueOf(children)
+			iter := childrenVal.MapRange()
+			for iter.Next() {
+				k := iter.Key()
+				v := reflect.ValueOf(iter.Value().Interface())
+				parent.FieldByName(k.String()).Set(v)
+			}
 		}
 	}
 
@@ -249,4 +307,24 @@ func parseBulkQueryResult(resultFile string, out interface{}) (err error) {
 
 	err = nil
 	return
+}
+
+func concludeObjectType(gid string) (reflect.Type, string, error) {
+	submatches := gidRegex.FindStringSubmatch(gid)
+	if len(submatches) != 2 {
+		return reflect.TypeOf(nil), "", fmt.Errorf("malformed gid=`%s`", gid)
+	}
+	resource := submatches[1]
+	switch resource {
+	case "Product":
+		return reflect.TypeOf(Product{}), fmt.Sprintf("%ss", resource), nil
+	case "ProductVariant":
+		return reflect.TypeOf(ProductVariant{}), fmt.Sprintf("%ss", resource), nil
+	case "Order":
+		return reflect.TypeOf(Order{}), fmt.Sprintf("%ss", resource), nil
+	case "LineItem":
+		return reflect.TypeOf(LineItem{}), fmt.Sprintf("%ss", resource), nil
+	default:
+		return reflect.TypeOf(nil), "", fmt.Errorf("`%s` not implemented type", resource)
+	}
 }
