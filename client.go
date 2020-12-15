@@ -61,3 +61,7 @@ func newShopifyGraphQLClient(apiKey string, password string, storeName string) *
 	}
 	return graphqlclient.NewClient(storeName, opts...)
 }
+
+func (c *Client) GraphQLClient() *graphql.Client {
+	return c.gql
+}
