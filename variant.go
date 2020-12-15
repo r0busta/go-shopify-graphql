@@ -18,10 +18,12 @@ type VariantServiceOp struct {
 type ProductVariant struct {
 	ID                graphql.ID       `json:"id,omitempty"`
 	LegacyResourceID  graphql.String   `json:"legacyResourceId,omitempty"`
+	SKU               graphql.String   `json:"sku,omitempty"`
 	SelectedOptions   []SelectedOption `json:"selectedOptions,omitempty"`
 	CompareAtPrice    Money            `json:"compareAtPrice,omitempty"`
 	Price             Money            `json:"price,omitempty"`
 	InventoryQuantity graphql.Int      `json:"inventoryQuantity,omitempty"`
+	InventoryItem     InventoryItem    `json:"inventoryItem,omitempty"`
 }
 
 type SelectedOption struct {
@@ -83,9 +85,6 @@ type ProductVariantInput struct {
 
 	// The price of the variant.
 	Price Money `json:"price,omitempty"`
-
-	// The private metafields to associated with this product.
-	PrivateMetafields []PrivateMetafieldInput `json:"privateMetafields,omitempty"`
 
 	// Create only required field. Specifies the product on which to create the variant.
 	ProductID graphql.ID `json:"productId,omitempty"`

@@ -65,9 +65,6 @@ type CollectionInput struct {
 	// The metafields to associate with this collection.
 	Metafields []MetafieldInput `json:"metafields,omitempty"`
 
-	// The private metafields to associated with this product.
-	PrivateMetafields []PrivateMetafieldInput `json:"privateMetafields,omitempty"`
-
 	// Initial list of collection products. Only valid with productCreate and without rules.
 	Products []graphql.ID `json:"products,omitempty"`
 

@@ -42,7 +42,12 @@ type Product struct {
 	Vendor           graphql.String      `json:"vendor,omitempty"`
 	TotalInventory   graphql.Int         `json:"totalInventory,omitempty"`
 	OnlineStoreURL   graphql.String      `json:"onlineStoreUrl,omitempty"`
-	ProductVariants  []ProductVariant    `json:"variants,omitempty"`
+	DescriptionHTML  graphql.String      `json:"descriptionHtml,omitempty"`
+	SEO              *SEOInput           `json:"seo,omitempty"`
+	TemplateSuffix   graphql.String      `json:"templateSuffix,omitempty"`
+
+	Metafields      []Metafield      `json:"metafields,omitempty"`
+	ProductVariants []ProductVariant `json:"variants,omitempty"`
 }
 
 type ProductShort struct {
@@ -71,7 +76,7 @@ type ProductUpdate struct {
 }
 
 type ProductDelete struct {
-	ProductInput ProductInput
+	ProductInput ProductDeleteInput
 }
 
 type ProductDeleteInput struct {
@@ -108,9 +113,6 @@ type ProductInput struct {
 
 	// List of custom product options (maximum of 3 per product).
 	Options []graphql.String `json:"options,omitempty"`
-
-	// The private metafields to associated with this product.
-	PrivateMetafields []PrivateMetafieldInput `json:"privateMetafields,omitempty"`
 
 	// The product type specified by the merchant.
 	ProductType graphql.String `json:"productType,omitempty"`
@@ -158,24 +160,6 @@ type MetafieldInput struct {
 	ValueType MetafieldValueType `json:"valueType,omitempty"`
 }
 
-type PrivateMetafieldInput struct {
-	Key        graphql.String              `json:"key,omitempty"`       // REQUIRED
-	Namespace  graphql.String              `json:"namespace,omitempty"` // REQUIRED
-	Owner      graphql.ID                  `json:"owner,omitempty"`
-	ValueInput *PrivateMetafieldValueInput `json:"valueInput,omitempty"` // REQUIRED
-}
-
-type PrivateMetafieldValueInput struct {
-	Value     graphql.String            `json:"value,omitempty"`     // REQUIRED
-	ValueType PrivateMetafieldValueType `json:"valueType,omitempty"` // REQUIRED
-}
-
-// PrivateMetafieldValueType enum
-// INTEGER A private metafield value type.
-// JSON_STRING A private metafield value type.
-// STRING A private metafield value type.
-type PrivateMetafieldValueType string
-
 // MetafieldValueType enum
 // INTEGER An integer.
 // JSON_STRING A JSON string.
@@ -207,14 +191,14 @@ type mutationProductDelete struct {
 
 type productCreateResult struct {
 	Product struct {
-		ID string `json:"id,omitempty"`
+		ID graphql.ID `json:"id,omitempty"`
 	}
 	UserErrors []UserErrors
 }
 
 type productUpdateResult struct {
 	Product struct {
-		ID string `json:"id,omitempty"`
+		ID graphql.ID `json:"id,omitempty"`
 	}
 	UserErrors []UserErrors
 }
@@ -253,12 +237,31 @@ func (s *ProductServiceOp) ListAll() ([]*Product, error) {
 						productType
 						vendor
 						totalInventory
-						onlineStoreUrl
+						onlineStoreUrl	
+						descriptionHtml
+						seo{
+							description
+							title
+						}
+						templateSuffix
+						metafields{
+							edges{
+								node{
+									id
+									legacyResourceId
+									namespace
+									key
+									value
+									valueType
+								}
+							}
+						}
 						variants{
 							edges{
 								node{
 									id
 									legacyResourceId
+									sku
 									selectedOptions{
 										name
 										value
@@ -266,6 +269,10 @@ func (s *ProductServiceOp) ListAll() ([]*Product, error) {
 									compareAtPrice
 									price
 									inventoryQuantity
+									inventoryItem{
+										id
+										legacyResourceId						
+									}
 								}
 							}
 						}
@@ -313,12 +320,31 @@ func (s *ProductServiceOp) List(query string) ([]*Product, error) {
 						productType
 						vendor
 						totalInventory
-						onlineStoreUrl		
+						onlineStoreUrl	
+						descriptionHtml
+						seo{
+							description
+							title
+						}
+						templateSuffix
+						metafields{
+							edges{
+								node{
+									id
+									legacyResourceId
+									namespace
+									key
+									value
+									valueType
+								}
+							}
+						}
 						variants{
 							edges{
 								node{
 									id
 									legacyResourceId
+									sku
 									selectedOptions{
 										name
 										value
@@ -326,6 +352,10 @@ func (s *ProductServiceOp) List(query string) ([]*Product, error) {
 									compareAtPrice
 									price
 									inventoryQuantity
+									inventoryItem{
+										id
+										legacyResourceId							
+									}
 								}
 							}
 						}		  
@@ -346,6 +376,8 @@ func (s *ProductServiceOp) List(query string) ([]*Product, error) {
 }
 
 func (s *ProductServiceOp) Get(id graphql.ID) (*Product, error) {
+	return nil, fmt.Errorf("ProductServiceOp.Get method not implemented correctly. Don't use it!")
+
 	var q struct {
 		Product `graphql:"product(id: $id)"`
 	}
