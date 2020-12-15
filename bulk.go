@@ -113,6 +113,12 @@ func (s *BulkOperationServiceOp) getBulkQueryResult() (url string, err error) {
 	}
 	log.Printf("Bulk operation finished with the status: %s", q.CurrentBulkOperation.Status)
 
+	if q.CurrentBulkOperation.Status != "COMPLETED" {
+		log.Printf("%+v", q)
+		err = fmt.Errorf("Bulk operation didn't complete, status=%s", q.CurrentBulkOperation.Status)
+		return
+	}
+
 	if q.CurrentBulkOperation.ErrorCode != "" {
 		log.Printf("%+v", q)
 		err = fmt.Errorf("Bulk operation error: %s", q.CurrentBulkOperation.ErrorCode)
@@ -258,13 +264,18 @@ func parseBulkQueryResult(resultFile string, out interface{}) (err error) {
 
 			var childrenSlice reflect.Value
 			var children map[string]interface{}
-			if c, ok := childrenLookup[parentID.ToString()]; ok {
-				children = c.(map[string]interface{})
-				childrenSlice = reflect.ValueOf(children[childrenFieldName])
+			if val, ok := childrenLookup[parentID.ToString()]; ok {
+				children = val.(map[string]interface{})
 			} else {
 				children = make(map[string]interface{})
+			}
+
+			if val, ok := children[childrenFieldName]; ok {
+				childrenSlice = reflect.ValueOf(val)
+			} else {
 				childrenSlice = reflect.MakeSlice(reflect.SliceOf(childObjType), 0, 10)
 			}
+
 			childrenSlice = reflect.Append(childrenSlice, childItemVal)
 
 			children[childrenFieldName] = childrenSlice.Interface()
@@ -287,16 +298,22 @@ func parseBulkQueryResult(resultFile string, out interface{}) (err error) {
 		}
 	}
 
-	for i := 0; i < outSlice.Len(); i++ {
-		parent := outSlice.Index(i).Elem()
-		parentID := parent.FieldByName("ID").Interface().(string)
-		if children, ok := childrenLookup[parentID]; ok {
-			childrenVal := reflect.ValueOf(children)
-			iter := childrenVal.MapRange()
-			for iter.Next() {
-				k := iter.Key()
-				v := reflect.ValueOf(iter.Value().Interface())
-				parent.FieldByName(k.String()).Set(v)
+	if len(childrenLookup) > 0 {
+		for i := 0; i < outSlice.Len(); i++ {
+			parent := outSlice.Index(i).Elem()
+			parentIDField := parent.FieldByName("ID")
+			if parentIDField.IsZero() {
+				return fmt.Errorf("No ID field on the first level")
+			}
+			parentID := parentIDField.Interface().(string)
+			if children, ok := childrenLookup[parentID]; ok {
+				childrenVal := reflect.ValueOf(children)
+				iter := childrenVal.MapRange()
+				for iter.Next() {
+					k := iter.Key()
+					v := reflect.ValueOf(iter.Value().Interface())
+					parent.FieldByName(k.String()).Set(v)
+				}
 			}
 		}
 	}
@@ -316,14 +333,16 @@ func concludeObjectType(gid string) (reflect.Type, string, error) {
 	}
 	resource := submatches[1]
 	switch resource {
+	case "LineItem":
+		return reflect.TypeOf(LineItem{}), fmt.Sprintf("%ss", resource), nil
+	case "Metafield":
+		return reflect.TypeOf(Metafield{}), fmt.Sprintf("%ss", resource), nil
+	case "Order":
+		return reflect.TypeOf(Order{}), fmt.Sprintf("%ss", resource), nil
 	case "Product":
 		return reflect.TypeOf(Product{}), fmt.Sprintf("%ss", resource), nil
 	case "ProductVariant":
 		return reflect.TypeOf(ProductVariant{}), fmt.Sprintf("%ss", resource), nil
-	case "Order":
-		return reflect.TypeOf(Order{}), fmt.Sprintf("%ss", resource), nil
-	case "LineItem":
-		return reflect.TypeOf(LineItem{}), fmt.Sprintf("%ss", resource), nil
 	default:
 		return reflect.TypeOf(nil), "", fmt.Errorf("`%s` not implemented type", resource)
 	}
