@@ -19,6 +19,7 @@ type Client struct {
 	Variant       VariantService
 	Collection    CollectionService
 	Order         OrderService
+	Metafield     MetafieldService
 	BulkOperation BulkOperationService
 }
 
@@ -47,6 +48,7 @@ func NewClient(apiKey string, password string, storeName string) *Client {
 	c.Variant = &VariantServiceOp{client: c}
 	c.Collection = &CollectionServiceOp{client: c}
 	c.Order = &OrderServiceOp{client: c}
+	c.Metafield = &MetafieldServiceOp{client: c}
 	c.BulkOperation = &BulkOperationServiceOp{client: c}
 
 	return c
