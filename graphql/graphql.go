@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/shurcooL/graphql"
+	"github.com/r0busta/graphql"
 )
 
 const (

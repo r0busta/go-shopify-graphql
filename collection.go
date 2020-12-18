@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/shurcooL/graphql"
+	"github.com/r0busta/graphql"
 )
 
 type CollectionService interface {

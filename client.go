@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 
-	graphqlclient "github.com/r0busta/go-shopify-graphql/graphql"
-	"github.com/shurcooL/graphql"
+	graphqlclient "github.com/r0busta/go-shopify-graphql/v2/graphql"
+	"github.com/r0busta/graphql"
 )
 
 const (

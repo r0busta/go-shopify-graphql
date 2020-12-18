@@ -1,6 +1,6 @@
 package shopify
 
-import "github.com/shurcooL/graphql"
+import "github.com/r0busta/graphql"
 
 type InventoryItem struct {
 	ID               graphql.ID     `json:"id,omitempty"`

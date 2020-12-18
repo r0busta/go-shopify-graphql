@@ -6,7 +6,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/shurcooL/graphql"
+	"github.com/r0busta/graphql"
 )
 
 type MetafieldService interface {

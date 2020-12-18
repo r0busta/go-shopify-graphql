@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/shurcooL/graphql"
+	"github.com/r0busta/graphql"
 )
 
 type VariantService interface {

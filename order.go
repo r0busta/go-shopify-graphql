@@ -3,7 +3,7 @@ package shopify
 import (
 	"strings"
 
-	"github.com/shurcooL/graphql"
+	"github.com/r0busta/graphql"
 )
 
 type OrderService interface {

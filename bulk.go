@@ -13,9 +13,9 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/r0busta/go-shopify-graphql/rand"
-	"github.com/r0busta/go-shopify-graphql/utils"
-	"github.com/shurcooL/graphql"
+	"github.com/r0busta/go-shopify-graphql/v2/rand"
+	"github.com/r0busta/go-shopify-graphql/v2/utils"
+	"github.com/r0busta/graphql"
 )
 
 type BulkOperationService interface {
@@ -340,7 +340,7 @@ func concludeObjectType(gid string) (reflect.Type, string, error) {
 	case "Order":
 		return reflect.TypeOf(Order{}), fmt.Sprintf("%ss", resource), nil
 	case "Product":
-		return reflect.TypeOf(Product{}), fmt.Sprintf("%ss", resource), nil
+		return reflect.TypeOf(ProductBulkResult{}), fmt.Sprintf("%ss", resource), nil
 	case "ProductVariant":
 		return reflect.TypeOf(ProductVariant{}), fmt.Sprintf("%ss", resource), nil
 	default:
