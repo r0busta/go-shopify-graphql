@@ -9,9 +9,9 @@ import (
 )
 
 type CollectionService interface {
-	ListAll() ([]*Collection, error)
+	ListAll() ([]*CollectionBulkResult, error)
 
-	Get(id graphql.ID) (*Collection, error)
+	Get(id graphql.ID) (*CollectionQueryResult, error)
 
 	Create(collection *CollectionCreate) (graphql.ID, error)
 	CreateBulk(collections []*CollectionCreate) error
@@ -23,18 +23,29 @@ type CollectionServiceOp struct {
 	client *Client
 }
 
-type Collection struct {
+type CollectionBase struct {
 	ID            graphql.ID     `json:"id,omitempty"`
 	Handle        graphql.String `json:"handle,omitempty"`
+	Title         graphql.String `json:"title,omitempty"`
 	ProductsCount graphql.Int    `json:"productsCount,omitempty"`
-
-	Products struct {
-		Edges []ProductShortNode `json:"edges,omitempty"`
-	} `graphql:"products(first: 100)" json:"products,omitempty"`
 }
 
-type ProductShortNode struct {
-	Node ProductShort `json:"node,omitempty"`
+type CollectionBulkResult struct {
+	CollectionBase
+
+	Products []ProductBulkResult `json:"products,omitempty"`
+}
+
+type CollectionQueryResult struct {
+	CollectionBase
+
+	Products struct {
+		Edges []struct {
+			Product ProductQueryResult `json:"node,omitempty"`
+			Cursor  string             `json:"cursor,omitempty"`
+		} `json:"edges,omitempty"`
+		PageInfo PageInfo `json:"pageInfo,omitempty"`
+	} `json:"products,omitempty"`
 }
 
 type CollectionCreate struct {
@@ -150,43 +161,98 @@ type CollectionCreateResult struct {
 	UserErrors []UserErrors
 }
 
-func (s *CollectionServiceOp) ListAll() ([]*Collection, error) {
-	query := `
+var collectionQuery = `
+	id
+	handle	
+	title
+
+	products(first:250, after: $cursor){
+		edges{
+			node{
+				id
+			}
+			cursor
+		}
+		pageInfo{
+			hasNextPage
+		}		
+	}	
+`
+
+var collectionBulkQuery = `
+	id
+	handle	
+	title
+`
+
+func (s *CollectionServiceOp) ListAll() ([]*CollectionBulkResult, error) {
+	q := fmt.Sprintf(`
 		{
 			collections{
 				edges{
 					node{
-						id
-						handle
+						%s
 					}
 				}
 			}
 		}
-`
+	`, collectionBulkQuery)
 
-	res := []*Collection{}
-	err := s.client.BulkOperation.BulkQuery(query, &res)
+	res := []*CollectionBulkResult{}
+	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []*Collection{}, err
+		return []*CollectionBulkResult{}, err
 	}
 
 	return res, nil
 }
 
-func (s *CollectionServiceOp) Get(id graphql.ID) (*Collection, error) {
-	var q struct {
-		Collection `graphql:"collection(id: $id)"`
-	}
-	vars := map[string]interface{}{
-		"id": id,
-	}
-
-	err := s.client.gql.Query(context.Background(), &q, vars)
+func (s *CollectionServiceOp) Get(id graphql.ID) (*CollectionQueryResult, error) {
+	out, err := s.getPage(id, "")
 	if err != nil {
 		return nil, err
 	}
 
-	return &q.Collection, nil
+	nextPageData := out
+	hasNextPage := out.Products.PageInfo.HasNextPage
+	for hasNextPage && len(nextPageData.Products.Edges) > 0 {
+		cursor := nextPageData.Products.Edges[len(nextPageData.Products.Edges)-1].Cursor
+		nextPageData, err := s.getPage(id, cursor)
+		if err != nil {
+			return nil, err
+		}
+		out.Products.Edges = append(out.Products.Edges, nextPageData.Products.Edges...)
+		hasNextPage = nextPageData.Products.PageInfo.HasNextPage
+	}
+
+	return out, nil
+}
+
+func (s *CollectionServiceOp) getPage(id graphql.ID, cursor string) (*CollectionQueryResult, error) {
+	q := fmt.Sprintf(`
+		query collection($id: ID!, $cursor: String) {
+			collection(id: $id){
+				%s
+			}
+		}
+	`, collectionQuery)
+
+	vars := map[string]interface{}{
+		"id": id,
+	}
+	if cursor != "" {
+		vars["cursor"] = cursor
+	}
+
+	out := struct {
+		Collection *CollectionQueryResult `json:"collection"`
+	}{}
+	err := s.client.gql.QueryString(context.Background(), q, vars, &out)
+	if err != nil {
+		return nil, err
+	}
+
+	return out.Collection, nil
 }
 
 func (s *CollectionServiceOp) CreateBulk(collections []*CollectionCreate) error {

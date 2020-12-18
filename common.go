@@ -24,3 +24,10 @@ type MoneyBag struct {
 type CurrencyCode string
 
 type DateTime string
+
+type PageInfo struct {
+	// Indicates if there are more pages to fetch.
+	HasNextPage graphql.Boolean `json:"hasNextPage"`
+	// Indicates if there are any pages prior to the current page.
+	HasPreviousPage graphql.Boolean `json:"hasPreviousPage"`
+}

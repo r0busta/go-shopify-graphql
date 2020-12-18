@@ -10,10 +10,10 @@ import (
 )
 
 type ProductService interface {
-	List(query string) ([]*Product, error)
-	ListAll() ([]*Product, error)
+	List(query string) ([]*ProductBulkResult, error)
+	ListAll() ([]*ProductBulkResult, error)
 
-	Get(gid graphql.ID) (*Product, error)
+	Get(gid graphql.ID) (*ProductQueryResult, error)
 
 	Create(product *ProductCreate) error
 	CreateBulk(products []*ProductCreate) error
@@ -29,25 +29,41 @@ type ProductServiceOp struct {
 	client *Client
 }
 
-type Product struct {
-	ID               graphql.ID          `json:"id,omitempty"`
-	LegacyResourceID graphql.String      `json:"legacyResourceId,omitempty"`
-	Handle           graphql.String      `json:"handle,omitempty"`
-	Options          []ProductOption     `json:"options,omitempty"`
-	Tags             []graphql.String    `json:"tags,omitempty"`
-	Description      graphql.String      `json:"description,omitempty"`
-	Title            graphql.String      `json:"title,omitempty"`
-	PriceRangeV2     ProductPriceRangeV2 `json:"priceRangeV2,omitempty"`
-	ProductType      graphql.String      `json:"productType,omitempty"`
-	Vendor           graphql.String      `json:"vendor,omitempty"`
-	TotalInventory   graphql.Int         `json:"totalInventory,omitempty"`
-	OnlineStoreURL   graphql.String      `json:"onlineStoreUrl,omitempty"`
-	DescriptionHTML  graphql.String      `json:"descriptionHtml,omitempty"`
-	SEO              *SEOInput           `json:"seo,omitempty"`
-	TemplateSuffix   graphql.String      `json:"templateSuffix,omitempty"`
+type ProductBase struct {
+	ID               graphql.ID           `json:"id,omitempty"`
+	LegacyResourceID graphql.String       `json:"legacyResourceId,omitempty"`
+	Handle           graphql.String       `json:"handle,omitempty"`
+	Options          []ProductOption      `json:"options,omitempty"`
+	Tags             []graphql.String     `json:"tags,omitempty"`
+	Description      graphql.String       `json:"description,omitempty"`
+	Title            graphql.String       `json:"title,omitempty"`
+	PriceRangeV2     *ProductPriceRangeV2 `json:"priceRangeV2,omitempty"`
+	ProductType      graphql.String       `json:"productType,omitempty"`
+	Vendor           graphql.String       `json:"vendor,omitempty"`
+	TotalInventory   graphql.Int          `json:"totalInventory,omitempty"`
+	OnlineStoreURL   graphql.String       `json:"onlineStoreUrl,omitempty"`
+	DescriptionHTML  graphql.String       `json:"descriptionHtml,omitempty"`
+	SEO              *SEOInput            `json:"seo,omitempty"`
+	TemplateSuffix   graphql.String       `json:"templateSuffix,omitempty"`
+}
+
+type ProductBulkResult struct {
+	ProductBase
 
 	Metafields      []Metafield      `json:"metafields,omitempty"`
 	ProductVariants []ProductVariant `json:"variants,omitempty"`
+}
+
+type ProductQueryResult struct {
+	ProductBase
+
+	ProductVariants struct {
+		Edges []struct {
+			Variant ProductVariant `json:"node,omitempty"`
+			Cursor  string         `json:"cursor,omitempty"`
+		} `json:"edges,omitempty"`
+		PageInfo PageInfo `json:"pageInfo,omitempty"`
+	} `json:"variants,omitempty"`
 }
 
 type ProductShort struct {
@@ -208,189 +224,187 @@ type productDeleteResult struct {
 	UserErrors []UserErrors
 }
 
-func (s *ProductServiceOp) ListAll() ([]*Product, error) {
-	query := `
+const productQuery = `
+	id
+	legacyResourceId
+	handle
+	options{
+		name
+		values
+	}
+	tags
+	title
+	description
+	priceRangeV2{
+		minVariantPrice{
+			amount
+			currencyCode
+		}
+		maxVariantPrice{
+			amount
+			currencyCode
+		}
+	}
+	productType
+	vendor
+	totalInventory
+	onlineStoreUrl	
+	descriptionHtml
+	seo{
+		description
+		title
+	}
+	templateSuffix
+	variants(first:250, after: $cursor){
+		edges{
+			node{
+				id
+				legacyResourceId
+				sku
+				selectedOptions{
+					name
+					value
+				}
+				compareAtPrice
+				price
+				inventoryQuantity
+				inventoryItem{
+					id
+					legacyResourceId							
+				}
+			}
+		}
+	}
+`
+
+var productBulkQuery = fmt.Sprintf(`
+	%s
+	metafields{
+		edges{
+			node{
+				id
+				legacyResourceId
+				namespace
+				key
+				value
+				valueType
+			}
+		}
+	}
+	variants{
+		edges{
+			node{
+				id
+				legacyResourceId
+				sku
+				selectedOptions{
+					name
+					value
+				}
+				compareAtPrice
+				price
+				inventoryQuantity
+				inventoryItem{
+					id
+					legacyResourceId							
+				}
+			}
+		}
+	}
+`, productQuery)
+
+func (s *ProductServiceOp) ListAll() ([]*ProductBulkResult, error) {
+	q := fmt.Sprintf(`
 		{
 			products{
 				edges{
 					node{
-						id
-						legacyResourceId
-						handle
-						options{
-							name
-							values
-						}
-						tags
-						title
-						description
-						priceRangeV2{
-							minVariantPrice{
-								amount
-								currencyCode
-							}
-							maxVariantPrice{
-								amount
-								currencyCode
-							}
-						}
-						productType
-						vendor
-						totalInventory
-						onlineStoreUrl	
-						descriptionHtml
-						seo{
-							description
-							title
-						}
-						templateSuffix
-						metafields{
-							edges{
-								node{
-									id
-									legacyResourceId
-									namespace
-									key
-									value
-									valueType
-								}
-							}
-						}
-						variants{
-							edges{
-								node{
-									id
-									legacyResourceId
-									sku
-									selectedOptions{
-										name
-										value
-									}
-									compareAtPrice
-									price
-									inventoryQuantity
-									inventoryItem{
-										id
-										legacyResourceId						
-									}
-								}
-							}
-						}
+						%s
 					}
 				}
 			}
 		}
-`
+	`, productBulkQuery)
 
-	res := []*Product{}
-	err := s.client.BulkOperation.BulkQuery(query, &res)
+	res := []*ProductBulkResult{}
+	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []*Product{}, err
+		return []*ProductBulkResult{}, err
 	}
 
 	return res, nil
 }
 
-func (s *ProductServiceOp) List(query string) ([]*Product, error) {
-	q := `
+func (s *ProductServiceOp) List(query string) ([]*ProductBulkResult, error) {
+	q := fmt.Sprintf(`
 		{
 			products(query: "$query"){
 				edges{
 					node{
-						id
-						legacyResourceId
-						handle
-						options{
-							name
-							values
-						}
-						tags
-						title
-						description
-						priceRangeV2{
-							minVariantPrice{
-								amount
-								currencyCode
-							}
-							maxVariantPrice{
-								amount
-								currencyCode
-							}
-						}
-						productType
-						vendor
-						totalInventory
-						onlineStoreUrl	
-						descriptionHtml
-						seo{
-							description
-							title
-						}
-						templateSuffix
-						metafields{
-							edges{
-								node{
-									id
-									legacyResourceId
-									namespace
-									key
-									value
-									valueType
-								}
-							}
-						}
-						variants{
-							edges{
-								node{
-									id
-									legacyResourceId
-									sku
-									selectedOptions{
-										name
-										value
-									}
-									compareAtPrice
-									price
-									inventoryQuantity
-									inventoryItem{
-										id
-										legacyResourceId							
-									}
-								}
-							}
-						}		  
+						%s
 					}
 				}
 			}
 		}
-`
+	`, productBulkQuery)
+
 	q = strings.ReplaceAll(q, "$query", query)
 
-	res := []*Product{}
+	res := []*ProductBulkResult{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []*Product{}, err
+		return []*ProductBulkResult{}, err
 	}
 
 	return res, nil
 }
 
-func (s *ProductServiceOp) Get(id graphql.ID) (*Product, error) {
-	return nil, fmt.Errorf("ProductServiceOp.Get method not implemented correctly. Don't use it!")
-
-	var q struct {
-		Product `graphql:"product(id: $id)"`
-	}
-	vars := map[string]interface{}{
-		"id": id,
-	}
-
-	err := s.client.gql.Query(context.Background(), &q, vars)
+func (s *ProductServiceOp) Get(id graphql.ID) (*ProductQueryResult, error) {
+	out, err := s.getPage(id, "")
 	if err != nil {
 		return nil, err
 	}
 
-	return &q.Product, nil
+	nextPageData := out
+	hasNextPage := out.ProductVariants.PageInfo.HasNextPage
+	for hasNextPage && len(nextPageData.ProductVariants.Edges) > 0 {
+		cursor := nextPageData.ProductVariants.Edges[len(nextPageData.ProductVariants.Edges)-1].Cursor
+		nextPageData, err := s.getPage(id, cursor)
+		if err != nil {
+			return nil, err
+		}
+		out.ProductVariants.Edges = append(out.ProductVariants.Edges, nextPageData.ProductVariants.Edges...)
+		hasNextPage = nextPageData.ProductVariants.PageInfo.HasNextPage
+	}
+
+	return out, nil
+}
+
+func (s *ProductServiceOp) getPage(id graphql.ID, cursor string) (*ProductQueryResult, error) {
+	q := fmt.Sprintf(`
+		query product($id: ID!, $cursor: String) {
+			product(id: $id){
+				%s
+			}
+		}
+	`, productQuery)
+
+	vars := map[string]interface{}{
+		"id": id,
+	}
+	if cursor != "" {
+		vars["cursor"] = cursor
+	}
+
+	out := struct {
+		Product *ProductQueryResult `json:"product"`
+	}{}
+	err := s.client.gql.QueryString(context.Background(), q, vars, &out)
+	if err != nil {
+		return nil, err
+	}
+
+	return out.Product, nil
 }
 
 func (s *ProductServiceOp) CreateBulk(products []*ProductCreate) error {
