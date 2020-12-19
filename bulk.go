@@ -31,15 +31,16 @@ type queryCurrentBulkOperation struct {
 }
 
 type currentBulkOperation struct {
-	ID             graphql.ID
-	Status         graphql.String
-	ErrorCode      graphql.String
-	CreatedAt      graphql.String
-	CompletedAt    graphql.String
-	ObjectCount    graphql.String
-	FileSize       graphql.String
-	URL            graphql.String
-	PartialDataURL graphql.String
+	ID             graphql.ID     `json:"id"`
+	Status         graphql.String `json:"status"`
+	ErrorCode      graphql.String `json:"errorCode"`
+	CreatedAt      graphql.String `json:"createdAt"`
+	CompletedAt    graphql.String `json:"completedAt"`
+	ObjectCount    graphql.String `json:"objectCount"`
+	FileSize       graphql.String `json:"fileSize"`
+	URL            graphql.String `json:"url"`
+	PartialDataURL graphql.String `json:"partialDataUrl"`
+	Query          graphql.String `json:"query"`
 }
 
 type bulkOperationRunQueryResult struct {

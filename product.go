@@ -224,7 +224,7 @@ type productDeleteResult struct {
 	UserErrors []UserErrors
 }
 
-const productQuery = `
+const productBaseQuery = `
 	id
 	legacyResourceId
 	handle
@@ -255,6 +255,10 @@ const productQuery = `
 		title
 	}
 	templateSuffix
+`
+
+var productQuery = fmt.Sprintf(`
+	%s
 	variants(first:250, after: $cursor){
 		edges{
 			node{
@@ -275,7 +279,7 @@ const productQuery = `
 			}
 		}
 	}
-`
+`, productBaseQuery)
 
 var productBulkQuery = fmt.Sprintf(`
 	%s
@@ -311,7 +315,7 @@ var productBulkQuery = fmt.Sprintf(`
 			}
 		}
 	}
-`, productQuery)
+`, productBaseQuery)
 
 func (s *ProductServiceOp) ListAll() ([]*ProductBulkResult, error) {
 	q := fmt.Sprintf(`
