@@ -194,34 +194,34 @@ type ImageInput struct {
 }
 
 type mutationProductCreate struct {
-	ProductCreateResult productCreateResult `graphql:"productCreate(input: $input, media: $media)"`
+	ProductCreateResult productCreateResult `graphql:"productCreate(input: $input, media: $media)" json:"productCreate"`
 }
 
 type mutationProductUpdate struct {
-	ProductUpdateResult productUpdateResult `graphql:"productUpdate(input: $input)"`
+	ProductUpdateResult productUpdateResult `graphql:"productUpdate(input: $input)" json:"productUpdate"`
 }
 
 type mutationProductDelete struct {
-	ProductDeleteResult productDeleteResult `graphql:"productDelete(input: $input)"`
+	ProductDeleteResult productDeleteResult `graphql:"productDelete(input: $input)" json:"productDelete"`
 }
 
 type productCreateResult struct {
 	Product struct {
 		ID graphql.ID `json:"id,omitempty"`
 	}
-	UserErrors []UserErrors
+	UserErrors []UserErrors `json:"userErrors"`
 }
 
 type productUpdateResult struct {
 	Product struct {
 		ID graphql.ID `json:"id,omitempty"`
 	}
-	UserErrors []UserErrors
+	UserErrors []UserErrors `json:"userErrors"`
 }
 
 type productDeleteResult struct {
-	ID         string `json:"deletedProductId,omitempty"`
-	UserErrors []UserErrors
+	ID         string       `json:"deletedProductId,omitempty"`
+	UserErrors []UserErrors `json:"userErrors"`
 }
 
 const productBaseQuery = `

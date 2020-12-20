@@ -130,7 +130,7 @@ type InventoryLevelInput struct {
 type WeightUnit string
 
 type mutationProductVariantUpdate struct {
-	ProductVariantUpdateResult productVariantUpdateResult `graphql:"productVariantUpdate(input: $input)"`
+	ProductVariantUpdateResult productVariantUpdateResult `graphql:"productVariantUpdate(input: $input)" json:"productVariantUpdate"`
 }
 
 type productVariantUpdateResult struct {

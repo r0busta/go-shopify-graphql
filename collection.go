@@ -53,11 +53,11 @@ type CollectionCreate struct {
 }
 
 type mutationCollectionCreate struct {
-	CollectionCreateResult CollectionCreateResult `graphql:"collectionCreate(input: $input)"`
+	CollectionCreateResult CollectionCreateResult `graphql:"collectionCreate(input: $input)" json:"collectionCreate"`
 }
 
 type mutationCollectionUpdate struct {
-	CollectionCreateResult CollectionCreateResult `graphql:"collectionUpdate(input: $input)"`
+	CollectionCreateResult CollectionCreateResult `graphql:"collectionUpdate(input: $input)" json:"collectionUpdate"`
 }
 
 type CollectionInput struct {

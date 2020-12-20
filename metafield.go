@@ -52,12 +52,12 @@ type MetafieldDeleteInput struct {
 }
 
 type mutationMetafieldDelete struct {
-	MetafieldDeleteResult metafieldDeleteResult `graphql:"metafieldDelete(input: $input)"`
+	MetafieldDeleteResult metafieldDeleteResult `graphql:"metafieldDelete(input: $input)" json:"metafieldDelete"`
 }
 
 type metafieldDeleteResult struct {
-	DeletedID  string `json:"deletedId,omitempty"`
-	UserErrors []UserErrors
+	DeletedID  string       `json:"deletedId,omitempty"`
+	UserErrors []UserErrors `json:"userErrors"`
 }
 
 func (s *MetafieldServiceOp) ListAllShopMetafields() ([]*Metafield, error) {

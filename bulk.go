@@ -50,30 +50,24 @@ type CurrentBulkOperation struct {
 
 type bulkOperationRunQueryResult struct {
 	BulkOperation struct {
-		ID graphql.ID
-	}
-	UserErrors []struct {
-		Field   []graphql.String
-		Message graphql.String
-	}
+		ID graphql.ID `json:"id"`
+	} `json:"bulkOperation"`
+	UserErrors []UserErrors `json:"userErrors"`
 }
 
 type mutationBulkOperationRunQuery struct {
-	BulkOperationRunQueryResult bulkOperationRunQueryResult `graphql:"bulkOperationRunQuery(query: $query)"`
+	BulkOperationRunQueryResult bulkOperationRunQueryResult `graphql:"bulkOperationRunQuery(query: $query)" json:"bulkOperationRunQuery"`
 }
 
 type bulkOperationCancelResult struct {
 	BulkOperation struct {
-		ID graphql.ID
-	}
-	UserErrors []struct {
-		Field   []graphql.String
-		Message graphql.String
-	}
+		ID graphql.ID `json:"id"`
+	} `json:"bulkOperation"`
+	UserErrors []UserErrors `json:"userErrors"`
 }
 
 type mutationBulkOperationRunQueryCancel struct {
-	BulkOperationCancelResult bulkOperationCancelResult `graphql:"bulkOperationCancel(id: $id)"`
+	BulkOperationCancelResult bulkOperationCancelResult `graphql:"bulkOperationCancel(id: $id)" json:"bulkOperationCancel"`
 }
 
 var gidRegex *regexp.Regexp
