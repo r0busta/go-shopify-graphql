@@ -21,9 +21,10 @@ import (
 type BulkOperationService interface {
 	BulkQuery(query string, v interface{}) error
 
-	PostBulkQuery(query string) error
+	PostBulkQuery(query string) (graphql.ID, error)
 	GetCurrentBulkQuery() (CurrentBulkOperation, error)
 	GetCurrentBulkQueryResultURL() (string, error)
+	ShouldGetBulkQueryResultURL(id graphql.ID) (string, error)
 	CancelRunningBulkQuery() error
 }
 
@@ -76,7 +77,7 @@ func init() {
 	gidRegex = regexp.MustCompile(`^gid://shopify/(\w+)/\d+$`)
 }
 
-func (s *BulkOperationServiceOp) PostBulkQuery(query string) error {
+func (s *BulkOperationServiceOp) PostBulkQuery(query string) (graphql.ID, error) {
 	m := mutationBulkOperationRunQuery{}
 	vars := map[string]interface{}{
 		"query": graphql.String(query),
@@ -84,13 +85,13 @@ func (s *BulkOperationServiceOp) PostBulkQuery(query string) error {
 
 	err := s.client.gql.Mutate(context.Background(), &m, vars)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if len(m.BulkOperationRunQueryResult.UserErrors) > 0 {
-		return fmt.Errorf("%+v", m.BulkOperationRunQueryResult.UserErrors)
+		return nil, fmt.Errorf("%+v", m.BulkOperationRunQueryResult.UserErrors)
 	}
 
-	return nil
+	return m.BulkOperationRunQueryResult.BulkOperation.ID, nil
 }
 
 func (s *BulkOperationServiceOp) GetCurrentBulkQuery() (CurrentBulkOperation, error) {
@@ -104,14 +105,23 @@ func (s *BulkOperationServiceOp) GetCurrentBulkQuery() (CurrentBulkOperation, er
 }
 
 func (s *BulkOperationServiceOp) GetCurrentBulkQueryResultURL() (url string, err error) {
+	return s.ShouldGetBulkQueryResultURL(nil)
+}
+
+func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(id graphql.ID) (url string, err error) {
 	q, err := s.GetCurrentBulkQuery()
 	if err != nil {
 		return
 	}
 
+	if id != nil && q.ID != id {
+		err = fmt.Errorf("Bulk operation ID doesn't match, got=%v, want=%v", q.ID, id)
+		return
+	}
+
 	// Start polling the operation's status
 	for q.Status == "CREATED" || q.Status == "RUNNING" {
-		log.Println("Bulk operation still running...")
+		log.Printf("Bulk operation still %s...", q.Status)
 		time.Sleep(1 * time.Second)
 
 		q, err = s.GetCurrentBulkQuery()
@@ -168,7 +178,7 @@ func (s *BulkOperationServiceOp) CancelRunningBulkQuery() (err error) {
 			return
 		}
 		for q.Status == "CREATED" || q.Status == "RUNNING" || q.Status == "CANCELING" {
-			log.Println("Bulk operation still canceling...")
+			log.Printf("Bulk operation still %s...", q.Status)
 			q, err = s.GetCurrentBulkQuery()
 			if err != nil {
 				return
@@ -180,35 +190,43 @@ func (s *BulkOperationServiceOp) CancelRunningBulkQuery() (err error) {
 	return
 }
 
-func (s *BulkOperationServiceOp) BulkQuery(query string, out interface{}) (err error) {
-	err = s.CancelRunningBulkQuery()
+func (s *BulkOperationServiceOp) BulkQuery(query string, out interface{}) error {
+	err := s.CancelRunningBulkQuery()
 	if err != nil {
-		return
+		return err
 	}
 
-	err = s.PostBulkQuery(query)
+	id, err := s.PostBulkQuery(query)
 	if err != nil {
-		return
+		return err
 	}
 
-	url, err := s.GetCurrentBulkQueryResultURL()
-	if err != nil || url == "" {
-		return
+	if id == nil {
+		return fmt.Errorf("Posted operation ID is nil")
+	}
+
+	url, err := s.ShouldGetBulkQueryResultURL(id)
+	if err != nil {
+		return err
+	}
+
+	if url == "" {
+		return fmt.Errorf("Operation result URL is empty")
 	}
 
 	filename := fmt.Sprintf("%s%s", rand.String(10), ".jsonl")
 	resultFile := filepath.Join(os.TempDir(), filename)
 	err = utils.DownloadFile(resultFile, url)
 	if err != nil {
-		return
+		return err
 	}
 
 	err = parseBulkQueryResult(resultFile, out)
 	if err != nil {
-		return
+		return err
 	}
 
-	return
+	return nil
 }
 
 func parseBulkQueryResult(resultFile string, out interface{}) (err error) {
