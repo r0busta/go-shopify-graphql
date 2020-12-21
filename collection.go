@@ -3,9 +3,9 @@ package shopify
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/r0busta/graphql"
+	log "github.com/sirupsen/logrus"
 )
 
 type CollectionService interface {
@@ -259,7 +259,7 @@ func (s *CollectionServiceOp) CreateBulk(collections []*CollectionCreate) error 
 	for _, c := range collections {
 		_, err := s.client.Collection.Create(c)
 		if err != nil {
-			log.Printf("Warning! Couldn't create collection (%v): %s", c, err)
+			log.Warnf("Couldn't create collection (%v): %s", c, err)
 		}
 	}
 

@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -16,6 +15,7 @@ import (
 	"github.com/r0busta/go-shopify-graphql/v2/rand"
 	"github.com/r0busta/go-shopify-graphql/v2/utils"
 	"github.com/r0busta/graphql"
+	log "github.com/sirupsen/logrus"
 )
 
 type BulkOperationService interface {
@@ -121,7 +121,7 @@ func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(id graphql.ID) (url
 
 	// Start polling the operation's status
 	for q.Status == "CREATED" || q.Status == "RUNNING" {
-		log.Printf("Bulk operation still %s...", q.Status)
+		log.Tracef("Bulk operation still %s...", q.Status)
 		time.Sleep(1 * time.Second)
 
 		q, err = s.GetCurrentBulkQuery()
@@ -130,7 +130,7 @@ func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(id graphql.ID) (url
 		}
 
 	}
-	log.Printf("Bulk operation finished with the status: %s", q.Status)
+	log.Debugf("Bulk operation finished with the status: %s", q.Status)
 
 	if q.Status != "COMPLETED" {
 		err = fmt.Errorf("Bulk operation didn't complete, status=%s", q.Status)
@@ -157,7 +157,7 @@ func (s *BulkOperationServiceOp) CancelRunningBulkQuery() (err error) {
 	}
 
 	if q.Status == "CREATED" || q.Status == "RUNNING" {
-		log.Println("Canceling running operation")
+		log.Debugln("Canceling running operation")
 		operationID := q.ID
 
 		m := mutationBulkOperationRunQueryCancel{}
@@ -184,7 +184,7 @@ func (s *BulkOperationServiceOp) CancelRunningBulkQuery() (err error) {
 				return
 			}
 		}
-		log.Printf("Bulk operation cancelled")
+		log.Debugln("Bulk operation cancelled")
 	}
 
 	return

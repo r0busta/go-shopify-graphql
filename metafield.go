@@ -3,10 +3,10 @@ package shopify
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/r0busta/graphql"
+	log "github.com/sirupsen/logrus"
 )
 
 type MetafieldService interface {
@@ -150,7 +150,7 @@ func (s *MetafieldServiceOp) DeleteBulk(metafields []MetafieldDeleteInput) error
 	for _, m := range metafields {
 		err := s.Delete(m)
 		if err != nil {
-			log.Printf("Warning! Couldn't delete metafield (%v): %s", m, err)
+			log.Warnf("Couldn't delete metafield (%v): %s", m, err)
 		}
 	}
 

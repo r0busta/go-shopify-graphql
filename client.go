@@ -1,11 +1,11 @@
 package shopify
 
 import (
-	"log"
 	"os"
 
 	graphqlclient "github.com/r0busta/go-shopify-graphql/v2/graphql"
 	"github.com/r0busta/graphql"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -33,7 +33,7 @@ func NewDefaultClient() (shopClient *Client) {
 	password := os.Getenv("STORE_PASSWORD")
 	storeName := os.Getenv("STORE_NAME")
 	if apiKey == "" || password == "" || storeName == "" {
-		log.Panicln("Shopify app API Key and/or Password and/or Store Name not set")
+		log.Fatalln("Shopify app API Key and/or Password and/or Store Name not set")
 	}
 
 	shopClient = NewClient(apiKey, password, storeName)

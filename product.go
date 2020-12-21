@@ -3,10 +3,10 @@ package shopify
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/r0busta/graphql"
+	log "github.com/sirupsen/logrus"
 )
 
 type ProductService interface {
@@ -445,7 +445,7 @@ func (s *ProductServiceOp) UpdateBulk(products []*ProductUpdate) error {
 	for _, p := range products {
 		err := s.Update(p)
 		if err != nil {
-			log.Printf("Warning! Couldn't update product (%v): %s", p, err)
+			log.Warnf("Couldn't update product (%v): %s", p, err)
 		}
 	}
 
@@ -474,7 +474,7 @@ func (s *ProductServiceOp) DeleteBulk(products []*ProductDelete) error {
 	for _, p := range products {
 		err := s.Delete(p)
 		if err != nil {
-			log.Printf("Warning! Couldn't delete product (%v): %s", p, err)
+			log.Warnf("Couldn't delete product (%v): %s", p, err)
 		}
 	}
 
