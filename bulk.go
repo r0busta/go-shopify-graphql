@@ -178,7 +178,7 @@ func (s *BulkOperationServiceOp) CancelRunningBulkQuery() (err error) {
 			return
 		}
 		for q.Status == "CREATED" || q.Status == "RUNNING" || q.Status == "CANCELING" {
-			log.Printf("Bulk operation still %s...", q.Status)
+			log.Tracef("Bulk operation still %s...", q.Status)
 			q, err = s.GetCurrentBulkQuery()
 			if err != nil {
 				return

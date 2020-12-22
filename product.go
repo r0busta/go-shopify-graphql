@@ -415,7 +415,7 @@ func (s *ProductServiceOp) CreateBulk(products []*ProductCreate) error {
 	for _, p := range products {
 		err := s.Create(p)
 		if err != nil {
-			log.Printf("Warning! Couldn't create product (%v): %s", p, err)
+			log.Warnf("Couldn't create product (%v): %s", p, err)
 		}
 	}
 
