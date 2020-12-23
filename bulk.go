@@ -133,7 +133,7 @@ func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(id graphql.ID) (url
 	log.Debugf("Bulk operation finished with the status: %s", q.Status)
 
 	if q.Status != "COMPLETED" {
-		err = fmt.Errorf("Bulk operation didn't complete, status=%s", q.Status)
+		err = fmt.Errorf("Bulk operation didn't complete, status=%s, error_code=%s", q.Status, q.ErrorCode)
 		return
 	}
 
@@ -231,14 +231,14 @@ func (s *BulkOperationServiceOp) BulkQuery(query string, out interface{}) error 
 
 func parseBulkQueryResult(resultFile string, out interface{}) (err error) {
 	if reflect.TypeOf(out).Kind() != reflect.Ptr {
-		err = fmt.Errorf("'records' is not a pointer")
+		err = fmt.Errorf("the out arg is not a pointer")
 		return
 	}
 
 	outValue := reflect.ValueOf(out)
 	outSlice := outValue.Elem()
 	if outSlice.Kind() != reflect.Slice {
-		err = fmt.Errorf("'records' is not a  pointer to a slice interface")
+		err = fmt.Errorf("the out arg is not a pointer to a slice interface")
 		return
 	}
 
@@ -322,7 +322,10 @@ func parseBulkQueryResult(resultFile string, out interface{}) (err error) {
 
 	if len(childrenLookup) > 0 {
 		for i := 0; i < outSlice.Len(); i++ {
-			parent := outSlice.Index(i).Elem()
+			parent := outSlice.Index(i)
+			if parent.Kind() == reflect.Ptr {
+				parent = parent.Elem()
+			}
 			parentIDField := parent.FieldByName("ID")
 			if parentIDField.IsZero() {
 				return fmt.Errorf("No ID field on the first level")
@@ -334,7 +337,11 @@ func parseBulkQueryResult(resultFile string, out interface{}) (err error) {
 				for iter.Next() {
 					k := iter.Key()
 					v := reflect.ValueOf(iter.Value().Interface())
-					parent.FieldByName(k.String()).Set(v)
+					field := parent.FieldByName(k.String())
+					if !field.IsValid() {
+						return fmt.Errorf("Field '%s' not defined on the parent type %s", k.String(), parent.Type().String())
+					}
+					field.Set(v)
 				}
 			}
 		}
@@ -357,6 +364,8 @@ func concludeObjectType(gid string) (reflect.Type, string, error) {
 	switch resource {
 	case "LineItem":
 		return reflect.TypeOf(LineItem{}), fmt.Sprintf("%ss", resource), nil
+	case "FulfillmentOrderLineItem":
+		return reflect.TypeOf(FulfillmentOrderLineItem{}), fmt.Sprintf("%ss", resource), nil
 	case "Metafield":
 		return reflect.TypeOf(Metafield{}), fmt.Sprintf("%ss", resource), nil
 	case "Order":
