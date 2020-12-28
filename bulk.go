@@ -24,6 +24,7 @@ type BulkOperationService interface {
 	PostBulkQuery(query string) (graphql.ID, error)
 	GetCurrentBulkQuery() (CurrentBulkOperation, error)
 	GetCurrentBulkQueryResultURL() (string, error)
+	WaitForCurrentBulkQuery(interval time.Duration) (CurrentBulkOperation, error)
 	ShouldGetBulkQueryResultURL(id graphql.ID) (string, error)
 	CancelRunningBulkQuery() error
 }
