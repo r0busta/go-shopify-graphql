@@ -119,19 +119,7 @@ func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(id graphql.ID) (url
 		return
 	}
 
-	// Start polling the operation's status
-	for q.Status == "CREATED" || q.Status == "RUNNING" {
-		log.Tracef("Bulk operation still %s...", q.Status)
-		time.Sleep(1 * time.Second)
-
-		q, err = s.GetCurrentBulkQuery()
-		if err != nil {
-			return
-		}
-
-	}
-	log.Debugf("Bulk operation finished with the status: %s", q.Status)
-
+	q, err = s.WaitForCurrentBulkQuery(1 * time.Second)
 	if q.Status != "COMPLETED" {
 		err = fmt.Errorf("Bulk operation didn't complete, status=%s, error_code=%s", q.Status, q.ErrorCode)
 		return
@@ -148,6 +136,26 @@ func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(id graphql.ID) (url
 
 	url = string(q.URL)
 	return
+}
+
+func (s *BulkOperationServiceOp) WaitForCurrentBulkQuery(interval time.Duration) (CurrentBulkOperation, error) {
+	q, err := s.GetCurrentBulkQuery()
+	if err != nil {
+		return q, fmt.Errorf("CurrentBulkOperation query error: %s", err)
+	}
+
+	for q.Status == "CREATED" || q.Status == "RUNNING" || q.Status == "CANCELING" {
+		log.Debugf("Bulk operation is still %s...", q.Status)
+		time.Sleep(interval)
+
+		q, err = s.GetCurrentBulkQuery()
+		if err != nil {
+			return q, fmt.Errorf("CurrentBulkOperation query error: %s", err)
+		}
+	}
+	log.Debugf("Bulk operation ready, latest status=%s", q.Status)
+
+	return q, nil
 }
 
 func (s *BulkOperationServiceOp) CancelRunningBulkQuery() (err error) {
