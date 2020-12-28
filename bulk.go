@@ -200,7 +200,7 @@ func (s *BulkOperationServiceOp) CancelRunningBulkQuery() (err error) {
 }
 
 func (s *BulkOperationServiceOp) BulkQuery(query string, out interface{}) error {
-	err := s.CancelRunningBulkQuery()
+	_, err := s.WaitForCurrentBulkQuery(1 * time.Second)
 	if err != nil {
 		return err
 	}
