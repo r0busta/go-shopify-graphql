@@ -9,6 +9,8 @@ import (
 )
 
 type OrderService interface {
+	Get(id graphql.ID) (*OrderQueryResult, error)
+
 	List(query string) ([]*Order, error)
 	ListAll() ([]*Order, error)
 
@@ -21,21 +23,50 @@ type OrderServiceOp struct {
 	client *Client
 }
 
+type OrderBase struct {
+	ID               graphql.ID       `json:"id,omitempty"`
+	LegacyResourceID graphql.String   `json:"legacyResourceId,omitempty"`
+	Name             graphql.String   `json:"name,omitempty"`
+	CreatedAt        DateTime         `json:"createdAt,omitempty"`
+	Customer         Customer         `json:"customer,omitempty"`
+	ClientIP         graphql.String   `json:"clientIp,omitempty"`
+	TaxLines         []TaxLine        `json:"taxLines,omitempty"`
+	TotalReceivedSet MoneyBag         `json:"totalReceivedSet,omitempty"`
+	ShippingAddress  MailingAddress   `json:"shippingAddress,omitempty"`
+	ShippingLine     ShippingLine     `json:"shippingLine,omitempty"`
+	Note             graphql.String   `json:"note,omitempty"`
+	Tags             []graphql.String `json:"tags,omitempty"`
+}
+
 type Order struct {
-	ID                graphql.ID         `json:"id,omitempty"`
-	LegacyResourceID  graphql.String     `json:"legacyResourceId,omitempty"`
-	Name              graphql.String     `json:"name,omitempty"`
-	CreatedAt         DateTime           `json:"createdAt,omitempty"`
-	Customer          Customer           `json:"customer,omitempty"`
-	ClientIP          graphql.String     `json:"clientIp,omitempty"`
-	TaxLines          []TaxLine          `json:"taxLines,omitempty"`
-	TotalReceivedSet  MoneyBag           `json:"totalReceivedSet,omitempty"`
+	OrderBase
+
 	LineItems         []LineItem         `json:"lineItems,omitempty"`
-	ShippingAddress   MailingAddress     `json:"shippingAddress,omitempty"`
-	ShippingLine      ShippingLine       `json:"shippingLine,omitempty"`
-	Note              graphql.String     `json:"note,omitempty"`
-	Tags              []graphql.String   `json:"tags,omitempty"`
 	FulfillmentOrders []FulfillmentOrder `json:"fulfillmentOrders,omitempty"`
+}
+
+type OrderQueryResult struct {
+	OrderBase
+
+	LineItems struct {
+		Edges []struct {
+			LineItem LineItem `json:"node,omitempty"`
+		} `json:"edges,omitempty"`
+	} `json:"lineItems,omitempty"`
+
+	FulfillmentOrders struct {
+		Edges []struct {
+			FulfillmentOrder struct {
+				ID                        graphql.ID             `json:"id,omitempty"`
+				Status                    FulfillmentOrderStatus `json:"status,omitempty"`
+				FulfillmentOrderLineItems struct {
+					Edges []struct {
+						LineItem FulfillmentOrderLineItem `json:"node,omitempty"`
+					} `json:"edges,omitempty"`
+				} `json:"lineItems,omitempty"`
+			} `json:"node,omitempty"`
+		} `json:"edges,omitempty"`
+	} `json:"fulfillmentOrders,omitempty"`
 }
 
 type ShippingLine struct {
@@ -90,7 +121,8 @@ type FulfillmentOrderStatus string
 
 type FulfillmentOrderLineItem struct {
 	ID                graphql.ID  `json:"id,omitempty"`
-	RemainingQuantity graphql.Int `json:"remainingQuantity,omitempty"`
+	RemainingQuantity graphql.Int `json:"remainingQuantity"`
+	TotalQuantity     graphql.Int `json:"totalQuantity"`
 	LineItem          LineItem    `json:"lineItem,omitempty"`
 }
 
@@ -106,71 +138,176 @@ type OrderInput struct {
 	Tags []graphql.String `json:"tags,omitempty"`
 }
 
+const orderBaseQuery = `
+	id
+	legacyResourceId
+	name
+	createdAt
+	customer{
+		id
+		legacyResourceId
+		firstName
+		displayName
+		email
+	}
+	clientIp
+	shippingAddress{
+		address1
+		address2
+		city
+		province
+		country
+		zip
+	}
+	note
+	shippingLine{
+		originalPriceSet{
+			presentmentMoney{
+				amount
+				currencyCode
+			}
+			shopMoney{
+				amount
+				currencyCode
+			}
+		}
+		title
+	}
+	taxLines{
+		priceSet{
+			presentmentMoney{
+				amount
+				currencyCode
+			}
+			shopMoney{
+				amount
+				currencyCode
+			}
+		}
+		rate
+		ratePercentage
+		title
+	}
+	totalReceivedSet{
+		presentmentMoney{
+			amount
+			currencyCode
+		}
+		shopMoney{
+			amount
+			currencyCode
+		}
+	}
+`
+
+func (s *OrderServiceOp) Get(id graphql.ID) (*OrderQueryResult, error) {
+	q := fmt.Sprintf(`
+		query order($id: ID!) {
+			node(id: $id){
+				... on Order {
+					%s
+					lineItems(first:50){
+						edges{
+							node{
+								id
+								sku
+								quantity
+								fulfillableQuantity
+								product{
+									id
+									legacyResourceId										
+								}
+								vendor
+								title
+								variantTitle
+								variant{
+									id
+									legacyResourceId	
+									selectedOptions{
+										name
+										value
+									}									
+								}
+								originalTotalSet{
+									presentmentMoney{
+										amount
+										currencyCode
+									}
+									shopMoney{
+										amount
+										currencyCode
+									}
+								}
+								originalUnitPriceSet{
+									presentmentMoney{
+										amount
+										currencyCode
+									}
+									shopMoney{
+										amount
+										currencyCode
+									}
+								}
+								discountedUnitPriceSet{
+									presentmentMoney{
+										amount
+										currencyCode
+									}
+									shopMoney{
+										amount
+										currencyCode
+									}
+								}
+							}
+						}
+					}
+					fulfillmentOrders(first:5){
+						edges {
+							node {
+								id
+								status
+								lineItems(first:50){
+									edges {
+										node {
+											id
+											remainingQuantity
+											totalQuantity
+											lineItem{
+												sku
+											}								
+										}
+									}
+								}
+							}
+						}
+					}					
+				}
+			}
+		}
+	`, orderBaseQuery)
+
+	vars := map[string]interface{}{
+		"id": id,
+	}
+
+	out := struct {
+		Order *OrderQueryResult `json:"node"`
+	}{}
+	err := s.client.gql.QueryString(context.Background(), q, vars, &out)
+	if err != nil {
+		return nil, err
+	}
+
+	return out.Order, nil
+}
+
 func (s *OrderServiceOp) List(query string) ([]*Order, error) {
-	q := `
+	q := fmt.Sprintf(`
 		{
 			orders(query: "$query"){
 				edges{
 					node{
-						id
-						legacyResourceId
-						name
-						createdAt
-						customer{
-							id
-							legacyResourceId
-							firstName
-							displayName
-							email
-						}
-						clientIp
-						shippingAddress{
-							address1
-							address2
-							city
-							province
-							country
-							zip
-						}
-						note
-						shippingLine{
-							originalPriceSet{
-								presentmentMoney{
-									amount
-									currencyCode
-								}
-								shopMoney{
-									amount
-									currencyCode
-								}
-							}
-							title
-						}
-						taxLines{
-							priceSet{
-								presentmentMoney{
-									amount
-									currencyCode
-								}
-								shopMoney{
-									amount
-									currencyCode
-								}
-							}
-							rate
-							ratePercentage
-							title
-						}
-						totalReceivedSet{
-							presentmentMoney{
-								amount
-								currencyCode
-							}
-							shopMoney{
-								amount
-								currencyCode
-							}
-						}
+						%s
 						lineItems{
 							edges{
 								node{
@@ -230,7 +367,8 @@ func (s *OrderServiceOp) List(query string) ([]*Order, error) {
 				}
 			}
 		}
-`
+	`, orderBaseQuery)
+
 	q = strings.ReplaceAll(q, "$query", query)
 
 	res := []*Order{}
@@ -243,44 +381,12 @@ func (s *OrderServiceOp) List(query string) ([]*Order, error) {
 }
 
 func (s *OrderServiceOp) ListAll() ([]*Order, error) {
-	q := `
+	q := fmt.Sprintf(`
 		{
-			orders{
+			orders(query: "$query"){
 				edges{
 					node{
-						id
-						legacyResourceId
-						createdAt
-						customer{
-							id
-							legacyResourceId
-						}
-						clientIp
-						taxLines{
-							priceSet{
-								presentmentMoney{
-									amount
-									currencyCode
-								}
-								shopMoney{
-									amount
-									currencyCode
-								}
-							}
-							rate
-							ratePercentage
-							title
-						}
-						totalReceivedSet{
-							presentmentMoney{
-								amount
-								currencyCode
-							}
-							shopMoney{
-								amount
-								currencyCode
-							}
-						}
+						%s
 						lineItems{
 							edges{
 								node{
@@ -325,7 +431,7 @@ func (s *OrderServiceOp) ListAll() ([]*Order, error) {
 				}
 			}
 		}
-`
+	`, orderBaseQuery)
 
 	res := []*Order{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
