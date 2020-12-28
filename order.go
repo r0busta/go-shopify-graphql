@@ -14,7 +14,7 @@ type OrderService interface {
 	List(query string) ([]*Order, error)
 	ListAll() ([]*Order, error)
 
-	Update(input *OrderInput) error
+	Update(input OrderInput) error
 
 	GetFulfillmentOrdersAtLocation(orderID graphql.ID, locationID graphql.ID) ([]FulfillmentOrder, error)
 }
@@ -442,7 +442,7 @@ func (s *OrderServiceOp) ListAll() ([]*Order, error) {
 	return res, nil
 }
 
-func (s *OrderServiceOp) Update(input *OrderInput) error {
+func (s *OrderServiceOp) Update(input OrderInput) error {
 	m := mutationOrderUpdate{}
 
 	vars := map[string]interface{}{
