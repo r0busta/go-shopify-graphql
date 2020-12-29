@@ -136,6 +136,7 @@ type OrderUpdateResult struct {
 type OrderInput struct {
 	ID   graphql.ID       `json:"id,omitempty"`
 	Tags []graphql.String `json:"tags,omitempty"`
+	Note graphql.String   `json:"note,omitempty"`
 }
 
 const orderBaseQuery = `
@@ -159,7 +160,6 @@ const orderBaseQuery = `
 		country
 		zip
 	}
-	note
 	shippingLine{
 		originalPriceSet{
 			presentmentMoney{
@@ -198,6 +198,7 @@ const orderBaseQuery = `
 			currencyCode
 		}
 	}
+	note
 	tags
 `
 
