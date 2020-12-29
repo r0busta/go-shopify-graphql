@@ -198,6 +198,7 @@ const orderBaseQuery = `
 			currencyCode
 		}
 	}
+	tags
 `
 
 func (s *OrderServiceOp) Get(id graphql.ID) (*OrderQueryResult, error) {
