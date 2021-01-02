@@ -14,6 +14,8 @@ type OrderService interface {
 	List(query string) ([]*Order, error)
 	ListAll() ([]*Order, error)
 
+	ListAfterCursor(query string, first int, cursor string) ([]*Order, string, error)
+
 	Update(input OrderInput) error
 
 	GetFulfillmentOrdersAtLocation(orderID graphql.ID, locationID graphql.ID) ([]FulfillmentOrder, error)
@@ -202,6 +204,60 @@ const orderBaseQuery = `
 	tags
 `
 
+const lineItemFragment = `
+fragment lineItem on LineItem {
+	id
+	sku
+	quantity
+	fulfillableQuantity
+	product{
+		id
+		legacyResourceId										
+	}
+	vendor
+	title
+	variantTitle
+	variant{
+		id
+		legacyResourceId	
+		selectedOptions{
+			name
+			value
+		}									
+	}
+	originalTotalSet{
+		presentmentMoney{
+			amount
+			currencyCode
+		}
+		shopMoney{
+			amount
+			currencyCode
+		}
+	}
+	originalUnitPriceSet{
+		presentmentMoney{
+			amount
+			currencyCode
+		}
+		shopMoney{
+			amount
+			currencyCode
+		}
+	}
+	discountedUnitPriceSet{
+		presentmentMoney{
+			amount
+			currencyCode
+		}
+		shopMoney{
+			amount
+			currencyCode
+		}
+	}
+}
+`
+
 func (s *OrderServiceOp) Get(id graphql.ID) (*OrderQueryResult, error) {
 	q := fmt.Sprintf(`
 		query order($id: ID!) {
@@ -211,55 +267,7 @@ func (s *OrderServiceOp) Get(id graphql.ID) (*OrderQueryResult, error) {
 					lineItems(first:50){
 						edges{
 							node{
-								id
-								sku
-								quantity
-								fulfillableQuantity
-								product{
-									id
-									legacyResourceId										
-								}
-								vendor
-								title
-								variantTitle
-								variant{
-									id
-									legacyResourceId	
-									selectedOptions{
-										name
-										value
-									}									
-								}
-								originalTotalSet{
-									presentmentMoney{
-										amount
-										currencyCode
-									}
-									shopMoney{
-										amount
-										currencyCode
-									}
-								}
-								originalUnitPriceSet{
-									presentmentMoney{
-										amount
-										currencyCode
-									}
-									shopMoney{
-										amount
-										currencyCode
-									}
-								}
-								discountedUnitPriceSet{
-									presentmentMoney{
-										amount
-										currencyCode
-									}
-									shopMoney{
-										amount
-										currencyCode
-									}
-								}
+								...lineItem
 							}
 						}
 					}
@@ -286,7 +294,9 @@ func (s *OrderServiceOp) Get(id graphql.ID) (*OrderQueryResult, error) {
 				}
 			}
 		}
-	`, orderBaseQuery)
+
+		%s
+	`, orderBaseQuery, lineItemFragment)
 
 	vars := map[string]interface{}{
 		"id": id,
@@ -313,55 +323,7 @@ func (s *OrderServiceOp) List(query string) ([]*Order, error) {
 						lineItems{
 							edges{
 								node{
-									id
-									sku
-									quantity
-									fulfillableQuantity
-									product{
-										id
-										legacyResourceId										
-									}
-									vendor
-									title
-									variantTitle
-									variant{
-										id
-										legacyResourceId	
-										selectedOptions{
-											name
-											value
-										}									
-									}
-									originalTotalSet{
-										presentmentMoney{
-											amount
-											currencyCode
-										}
-										shopMoney{
-											amount
-											currencyCode
-										}
-									}
-									originalUnitPriceSet{
-										presentmentMoney{
-											amount
-											currencyCode
-										}
-										shopMoney{
-											amount
-											currencyCode
-										}
-									}
-									discountedUnitPriceSet{
-										presentmentMoney{
-											amount
-											currencyCode
-										}
-										shopMoney{
-											amount
-											currencyCode
-										}
-									}
+									...lineItem
 								}
 							}
 						}
@@ -369,7 +331,9 @@ func (s *OrderServiceOp) List(query string) ([]*Order, error) {
 				}
 			}
 		}
-	`, orderBaseQuery)
+
+		%s
+	`, orderBaseQuery, lineItemFragment)
 
 	q = strings.ReplaceAll(q, "$query", query)
 
@@ -392,40 +356,7 @@ func (s *OrderServiceOp) ListAll() ([]*Order, error) {
 						lineItems{
 							edges{
 								node{
-									id
-									quantity
-									product{
-										id
-										legacyResourceId										
-									}
-									variant{
-										id
-										legacyResourceId	
-										selectedOptions{
-											name
-											value
-										}									
-									}
-									originalUnitPriceSet{
-										presentmentMoney{
-											amount
-											currencyCode
-										}
-										shopMoney{
-											amount
-											currencyCode
-										}
-									}
-									discountedUnitPriceSet{
-										presentmentMoney{
-											amount
-											currencyCode
-										}
-										shopMoney{
-											amount
-											currencyCode
-										}
-									}
+									...lineItem
 								}
 							}
 						}
@@ -433,7 +364,9 @@ func (s *OrderServiceOp) ListAll() ([]*Order, error) {
 				}
 			}
 		}
-	`, orderBaseQuery)
+
+		%s
+	`, orderBaseQuery, lineItemFragment)
 
 	res := []*Order{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
@@ -442,6 +375,60 @@ func (s *OrderServiceOp) ListAll() ([]*Order, error) {
 	}
 
 	return res, nil
+}
+
+func (s *OrderServiceOp) ListAfterCursor(query string, first int, cursor string) ([]*Order, string, error) {
+	q := fmt.Sprintf(`
+		query orders($query: String, $first: Int!, $after: String) {
+			orders(query: $query, first: $first, after: $after){
+				edges{
+					node{
+						%s
+					}
+					cursor
+				}
+				pageInfo{
+					hasNextPage
+				}				
+			}
+		}
+	`, orderBaseQuery)
+
+	vars := map[string]interface{}{
+		"query": query,
+		"first": first,
+	}
+
+	if cursor != "" {
+		vars["after"] = cursor
+	}
+
+	out := struct {
+		Orders struct {
+			Edges []struct {
+				Order  *Order `json:"node,omitempty"`
+				Cursor string `json:"cursor,omitempty"`
+			} `json:"edges,omitempty"`
+			PageInfo struct {
+				HasNextPage bool `json:"hasNextPage,omitempty"`
+			} `json:"pageInfo,omitempty"`
+		} `json:"orders,omitempty"`
+	}{}
+	err := s.client.gql.QueryString(context.Background(), q, vars, &out)
+	if err != nil {
+		return nil, "", err
+	}
+
+	res := []*Order{}
+	nextCursor := ""
+	if len(out.Orders.Edges) > 0 {
+		nextCursor = out.Orders.Edges[len(out.Orders.Edges)-1].Cursor
+		for _, o := range out.Orders.Edges {
+			res = append(res, o.Order)
+		}
+	}
+
+	return res, nextCursor, nil
 }
 
 func (s *OrderServiceOp) Update(input OrderInput) error {
