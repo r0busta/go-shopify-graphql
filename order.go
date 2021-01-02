@@ -14,7 +14,7 @@ type OrderService interface {
 	List(opts ListOptions) ([]*Order, error)
 	ListAll() ([]*Order, error)
 
-	ListAfterCursor(opts ListOptions) ([]*Order, string, error)
+	ListAfterCursor(opts ListOptions) ([]*Order, string, string, error)
 
 	Update(input OrderInput) error
 
@@ -377,10 +377,10 @@ func (s *OrderServiceOp) ListAll() ([]*Order, error) {
 	return res, nil
 }
 
-func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]*Order, string, error) {
+func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]*Order, string, string, error) {
 	q := fmt.Sprintf(`
-		query orders($query: String, $first: Int!, $after: String, $reverse: Boolean) {
-			orders(query: $query, first: $first, after: $after, reverse: $reverse){
+		query orders($query: String, $first: Int, $last: Int, $before: String, $after: String, $reverse: Boolean) {
+			orders(query: $query, first: $first, last: $last, before: $before, after: $after, reverse: $reverse){
 				edges{
 					node{
 						%s
@@ -396,12 +396,19 @@ func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]*Order, string, er
 
 	vars := map[string]interface{}{
 		"query":   opts.Query,
-		"first":   opts.First,
 		"reverse": opts.Reverse,
 	}
 
 	if opts.After != "" {
 		vars["after"] = opts.After
+	} else if opts.Before != "" {
+		vars["before"] = opts.Before
+	}
+
+	if opts.First > 0 {
+		vars["first"] = opts.First
+	} else if opts.Last > 0 {
+		vars["last"] = opts.Last
 	}
 
 	out := struct {
@@ -417,19 +424,21 @@ func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]*Order, string, er
 	}{}
 	err := s.client.gql.QueryString(context.Background(), q, vars, &out)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
 	res := []*Order{}
-	nextCursor := ""
+	firstCursor := ""
+	lastCursor := ""
 	if len(out.Orders.Edges) > 0 {
-		nextCursor = out.Orders.Edges[len(out.Orders.Edges)-1].Cursor
+		firstCursor = out.Orders.Edges[0].Cursor
+		lastCursor = out.Orders.Edges[len(out.Orders.Edges)-1].Cursor
 		for _, o := range out.Orders.Edges {
 			res = append(res, o.Order)
 		}
 	}
 
-	return res, nextCursor, nil
+	return res, firstCursor, lastCursor, nil
 }
 
 func (s *OrderServiceOp) Update(input OrderInput) error {
