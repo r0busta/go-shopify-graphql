@@ -14,7 +14,7 @@ type OrderService interface {
 	List(opts ListOptions) ([]*Order, error)
 	ListAll() ([]*Order, error)
 
-	ListAfterCursor(opts ListOptions) ([]*Order, string, string, error)
+	ListAfterCursor(opts ListOptions) ([]*OrderQueryResult, string, string, error)
 
 	Update(input OrderInput) error
 
@@ -377,13 +377,21 @@ func (s *OrderServiceOp) ListAll() ([]*Order, error) {
 	return res, nil
 }
 
-func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]*Order, string, string, error) {
+func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]*OrderQueryResult, string, string, error) {
 	q := fmt.Sprintf(`
 		query orders($query: String, $first: Int, $last: Int, $before: String, $after: String, $reverse: Boolean) {
 			orders(query: $query, first: $first, last: $last, before: $before, after: $after, reverse: $reverse){
 				edges{
 					node{
 						%s
+
+						lineItems(first:50){
+							edges{
+								node{
+									...lineItem
+								}
+							}
+						}
 					}
 					cursor
 				}
@@ -392,7 +400,9 @@ func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]*Order, string, st
 				}				
 			}
 		}
-	`, orderBaseQuery)
+
+		%s
+	`, orderBaseQuery, lineItemFragment)
 
 	vars := map[string]interface{}{
 		"query":   opts.Query,
@@ -414,8 +424,8 @@ func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]*Order, string, st
 	out := struct {
 		Orders struct {
 			Edges []struct {
-				Order  *Order `json:"node,omitempty"`
-				Cursor string `json:"cursor,omitempty"`
+				OrderQueryResult *OrderQueryResult `json:"node,omitempty"`
+				Cursor           string            `json:"cursor,omitempty"`
 			} `json:"edges,omitempty"`
 			PageInfo struct {
 				HasNextPage bool `json:"hasNextPage,omitempty"`
@@ -427,14 +437,14 @@ func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]*Order, string, st
 		return nil, "", "", err
 	}
 
-	res := []*Order{}
+	res := []*OrderQueryResult{}
 	firstCursor := ""
 	lastCursor := ""
 	if len(out.Orders.Edges) > 0 {
 		firstCursor = out.Orders.Edges[0].Cursor
 		lastCursor = out.Orders.Edges[len(out.Orders.Edges)-1].Cursor
 		for _, o := range out.Orders.Edges {
-			res = append(res, o.Order)
+			res = append(res, o.OrderQueryResult)
 		}
 	}
 
