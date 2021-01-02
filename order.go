@@ -204,6 +204,38 @@ const orderBaseQuery = `
 	tags
 `
 
+const orderLightQuery = `
+	id
+	legacyResourceId
+	name
+	createdAt
+	customer{
+		id
+		legacyResourceId
+		firstName
+		displayName
+		email
+	}
+	shippingAddress{
+		address1
+		address2
+		city
+		province
+		country
+		zip
+	}
+	shippingLine{
+		title
+	}
+	totalReceivedSet{
+		shopMoney{
+			amount
+		}
+	}
+	note
+	tags
+`
+
 const lineItemFragment = `
 fragment lineItem on LineItem {
 	id
@@ -255,6 +287,18 @@ fragment lineItem on LineItem {
 			currencyCode
 		}
 	}
+}
+`
+
+const lineItemFragmentLight = `
+fragment lineItem on LineItem {
+	id
+	sku
+	quantity
+	fulfillableQuantity
+	vendor
+	title
+	variantTitle
 }
 `
 
@@ -385,7 +429,7 @@ func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]*OrderQueryResult,
 					node{
 						%s
 
-						lineItems(first:50){
+						lineItems(first:25){
 							edges{
 								node{
 									...lineItem
@@ -402,7 +446,7 @@ func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]*OrderQueryResult,
 		}
 
 		%s
-	`, orderBaseQuery, lineItemFragment)
+	`, orderLightQuery, lineItemFragmentLight)
 
 	vars := map[string]interface{}{
 		"query":   opts.Query,
