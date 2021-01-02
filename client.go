@@ -26,9 +26,12 @@ type Client struct {
 	BulkOperation BulkOperationService
 }
 
-type UserErrors struct {
-	Field   []graphql.String
-	Message graphql.String
+type ListOptions struct {
+	Query   string
+	First   int
+	After   string
+	Before  string
+	Reverse bool
 }
 
 func NewDefaultClient() (shopClient *Client) {

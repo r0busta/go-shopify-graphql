@@ -11,10 +11,10 @@ import (
 type OrderService interface {
 	Get(id graphql.ID) (*OrderQueryResult, error)
 
-	List(query string) ([]*Order, error)
+	List(opts ListOptions) ([]*Order, error)
 	ListAll() ([]*Order, error)
 
-	ListAfterCursor(query string, first int, cursor string) ([]*Order, string, error)
+	ListAfterCursor(opts ListOptions) ([]*Order, string, error)
 
 	Update(input OrderInput) error
 
@@ -313,7 +313,7 @@ func (s *OrderServiceOp) Get(id graphql.ID) (*OrderQueryResult, error) {
 	return out.Order, nil
 }
 
-func (s *OrderServiceOp) List(query string) ([]*Order, error) {
+func (s *OrderServiceOp) List(opts ListOptions) ([]*Order, error) {
 	q := fmt.Sprintf(`
 		{
 			orders(query: "$query"){
@@ -335,7 +335,7 @@ func (s *OrderServiceOp) List(query string) ([]*Order, error) {
 		%s
 	`, orderBaseQuery, lineItemFragment)
 
-	q = strings.ReplaceAll(q, "$query", query)
+	q = strings.ReplaceAll(q, "$query", opts.Query)
 
 	res := []*Order{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
@@ -377,10 +377,10 @@ func (s *OrderServiceOp) ListAll() ([]*Order, error) {
 	return res, nil
 }
 
-func (s *OrderServiceOp) ListAfterCursor(query string, first int, cursor string) ([]*Order, string, error) {
+func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]*Order, string, error) {
 	q := fmt.Sprintf(`
-		query orders($query: String, $first: Int!, $after: String) {
-			orders(query: $query, first: $first, after: $after){
+		query orders($query: String, $first: Int!, $after: String, $reverse: Boolean) {
+			orders(query: $query, first: $first, after: $after, reverse: $reverse){
 				edges{
 					node{
 						%s
@@ -395,12 +395,13 @@ func (s *OrderServiceOp) ListAfterCursor(query string, first int, cursor string)
 	`, orderBaseQuery)
 
 	vars := map[string]interface{}{
-		"query": query,
-		"first": first,
+		"query":   opts.Query,
+		"first":   opts.First,
+		"reverse": opts.Reverse,
 	}
 
-	if cursor != "" {
-		vars["after"] = cursor
+	if opts.After != "" {
+		vars["after"] = opts.After
 	}
 
 	out := struct {

@@ -2,6 +2,11 @@ package shopify
 
 import "github.com/r0busta/graphql"
 
+type UserErrors struct {
+	Field   []graphql.String
+	Message graphql.String
+}
+
 type Money string   // Serialized and truncated to 2 decimals decimal.Decimal
 type Decimal string // Serialized decimal.Decimal
 
