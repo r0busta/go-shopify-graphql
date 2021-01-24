@@ -103,6 +103,7 @@ type LineItem struct {
 	OriginalTotalSet       MoneyBag        `json:"originalTotalSet,omitempty"`
 	OriginalUnitPriceSet   MoneyBag        `json:"originalUnitPriceSet,omitempty"`
 	DiscountedUnitPriceSet MoneyBag        `json:"discountedUnitPriceSet,omitempty"`
+	DiscountedTotalSet     MoneyBag        `json:"discountedTotalSet,omitempty"`
 }
 
 type LineItemProduct struct {
@@ -281,6 +282,16 @@ fragment lineItem on LineItem {
 		}
 	}
 	discountedUnitPriceSet{
+		presentmentMoney{
+			amount
+			currencyCode
+		}
+		shopMoney{
+			amount
+			currencyCode
+		}
+	}
+	discountedTotalSet{
 		presentmentMoney{
 			amount
 			currencyCode
