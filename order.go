@@ -30,6 +30,7 @@ type OrderBase struct {
 	LegacyResourceID         graphql.String   `json:"legacyResourceId,omitempty"`
 	Name                     graphql.String   `json:"name,omitempty"`
 	CreatedAt                DateTime         `json:"createdAt,omitempty"`
+	Closed                   graphql.Boolean  `json:"closed,omitempty"`
 	Customer                 Customer         `json:"customer,omitempty"`
 	ClientIP                 graphql.String   `json:"clientIp,omitempty"`
 	TaxLines                 []TaxLine        `json:"taxLines,omitempty"`
