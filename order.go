@@ -95,6 +95,7 @@ type LineItem struct {
 	SKU                    graphql.String  `json:"sku,omitempty"`
 	Quantity               graphql.Int     `json:"quantity,omitempty"`
 	FulfillableQuantity    graphql.Int     `json:"fulfillableQuantity,omitempty"`
+	FulfillmentStatus      graphql.String  `json:"fulfillmentStatus,omitempty"`
 	Vendor                 graphql.String  `json:"vendor,omitempty"`
 	Title                  graphql.String  `json:"title,omitempty"`
 	VariantTitle           graphql.String  `json:"variantTitle,omitempty"`
@@ -246,6 +247,7 @@ fragment lineItem on LineItem {
 	sku
 	quantity
 	fulfillableQuantity
+	fulfillmentStatus
 	product{
 		id
 		legacyResourceId										
@@ -310,6 +312,7 @@ fragment lineItem on LineItem {
 	sku
 	quantity
 	fulfillableQuantity
+	fulfillmentStatus
 	vendor
 	title
 	variantTitle
