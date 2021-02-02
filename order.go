@@ -26,21 +26,22 @@ type OrderServiceOp struct {
 }
 
 type OrderBase struct {
-	ID                       graphql.ID       `json:"id,omitempty"`
-	LegacyResourceID         graphql.String   `json:"legacyResourceId,omitempty"`
-	Name                     graphql.String   `json:"name,omitempty"`
-	CreatedAt                DateTime         `json:"createdAt,omitempty"`
-	Closed                   graphql.Boolean  `json:"closed,omitempty"`
-	Customer                 Customer         `json:"customer,omitempty"`
-	ClientIP                 graphql.String   `json:"clientIp,omitempty"`
-	TaxLines                 []TaxLine        `json:"taxLines,omitempty"`
-	TotalReceivedSet         MoneyBag         `json:"totalReceivedSet,omitempty"`
-	ShippingAddress          MailingAddress   `json:"shippingAddress,omitempty"`
-	ShippingLine             ShippingLine     `json:"shippingLine,omitempty"`
-	Note                     graphql.String   `json:"note,omitempty"`
-	Tags                     []graphql.String `json:"tags,omitempty"`
-	DisplayFinancialStatus   graphql.String   `json:"displayFinancialStatus,omitempty"`
-	DisplayFulfillmentStatus graphql.String   `json:"displayFulfillmentStatus,omitempty"`
+	ID                       graphql.ID         `json:"id,omitempty"`
+	LegacyResourceID         graphql.String     `json:"legacyResourceId,omitempty"`
+	Name                     graphql.String     `json:"name,omitempty"`
+	CreatedAt                DateTime           `json:"createdAt,omitempty"`
+	Closed                   graphql.Boolean    `json:"closed,omitempty"`
+	Customer                 Customer           `json:"customer,omitempty"`
+	ClientIP                 graphql.String     `json:"clientIp,omitempty"`
+	TaxLines                 []TaxLine          `json:"taxLines,omitempty"`
+	TotalReceivedSet         MoneyBag           `json:"totalReceivedSet,omitempty"`
+	ShippingAddress          MailingAddress     `json:"shippingAddress,omitempty"`
+	ShippingLine             ShippingLine       `json:"shippingLine,omitempty"`
+	Note                     graphql.String     `json:"note,omitempty"`
+	Tags                     []graphql.String   `json:"tags,omitempty"`
+	DisplayFinancialStatus   graphql.String     `json:"displayFinancialStatus,omitempty"`
+	DisplayFulfillmentStatus graphql.String     `json:"displayFulfillmentStatus,omitempty"`
+	Transactions             []OrderTransaction `json:"transactions,omitempty"`
 }
 
 type Order struct {
@@ -133,6 +134,18 @@ type FulfillmentOrderLineItem struct {
 	LineItem          LineItem    `json:"lineItem,omitempty"`
 }
 
+type OrderTransactionStatus string
+
+type OrderTransactionKind string
+
+type OrderTransaction struct {
+	ProcessedAt DateTime               `json:"processedAt,omitempty"`
+	Status      OrderTransactionStatus `json:"status,omitempty"`
+	Kind        OrderTransactionKind   `json:"kind,omitempty"`
+	Test        graphql.Boolean        `json:"test,omitempty"`
+	AmountSet   *MoneyBag              `json:"amountSet,omitempty"`
+}
+
 type mutationOrderUpdate struct {
 	OrderUpdateResult OrderUpdateResult `graphql:"orderUpdate(input: $input)" json:"orderUpdate"`
 }
@@ -207,6 +220,18 @@ const orderBaseQuery = `
 	}
 	note
 	tags
+	transactions {
+		processedAt
+		status
+		kind
+		test
+		amountSet {
+			shopMoney {
+				amount
+				currencyCode
+			}
+		}
+	}	
 `
 
 const orderLightQuery = `
