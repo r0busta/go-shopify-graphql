@@ -1,10 +1,10 @@
 # go-shopify-graphql
 
-A simple Shopify client using the Shopify's GraphQL Admin API.
+A simple client using the Shopify GraphQL Admin API.
 
 ## Getting started
 
-A Hello World example
+Hello World example
 
 ### 0. Setup
 
@@ -22,7 +22,7 @@ package main
 import (
     "fmt"
 
-    shopify "github.com/r0busta/go-shopify-graphql/v2"
+    shopify "github.com/r0busta/go-shopify-graphql/v3"
 )
 
 func main() {

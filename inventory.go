@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/r0busta/go-shopify-graphql-model/graph/model"
 	"github.com/r0busta/graphql"
 )
 
 type InventoryService interface {
-	Update(id graphql.ID, input InventoryItemUpdateInput) error
-	Adjust(locationID graphql.ID, input []InventoryAdjustItemInput) error
+	Update(id graphql.ID, input *model.InventoryItemUpdateInput) error
+	Adjust(locationID graphql.ID, input []*model.InventoryAdjustItemInput) error
 	ActivateInventory(locationID graphql.ID, id graphql.ID) error
 }
 
@@ -17,52 +18,19 @@ type InventoryServiceOp struct {
 	client *Client
 }
 
-type InventoryItem struct {
-	ID               graphql.ID     `json:"id,omitempty"`
-	LegacyResourceID graphql.String `json:"legacyResourceId,omitempty"`
-	SKU              graphql.String `json:"sku,omitempty"`
-}
-
-type InventoryLevel struct {
-	UpdatedAt graphql.String `json:"updatedAt,omitempty"`
-	Available graphql.Int    `json:"available,omitempty"`
-	Item      InventoryItem  `json:"item,omitempty"`
-}
-
-type InventoryItemUpdateInput struct {
-	Cost graphql.Float `json:"cost,omitempty"`
-}
-
 type mutationInventoryItemUpdate struct {
-	InventoryItemUpdateResult InventoryItemUpdateResult `graphql:"inventoryItemUpdate(id: $id, input: $input)" json:"inventoryItemUpdate"`
-}
-
-type InventoryItemUpdateResult struct {
-	UserErrors []UserErrors `json:"userErrors,omitempty"`
-}
-
-type InventoryAdjustItemInput struct {
-	InventoryItemID graphql.ID  `json:"inventoryItemId,omitempty"`
-	AvailableDelta  graphql.Int `json:"availableDelta,omitempty"`
+	InventoryItemUpdateResult model.InventoryItemUpdatePayload `graphql:"inventoryItemUpdate(id: $id, input: $input)" json:"inventoryItemUpdate"`
 }
 
 type mutationInventoryBulkAdjustQuantityAtLocation struct {
-	InventoryBulkAdjustQuantityAtLocationResult InventoryBulkAdjustQuantityAtLocationResult `graphql:"inventoryBulkAdjustQuantityAtLocation(locationId: $locationId, inventoryItemAdjustments: $inventoryItemAdjustments)" json:"inventoryBulkAdjustQuantityAtLocation"`
-}
-
-type InventoryBulkAdjustQuantityAtLocationResult struct {
-	UserErrors []UserErrors `json:"userErrors,omitempty"`
+	InventoryBulkAdjustQuantityAtLocationResult model.InventoryBulkAdjustQuantityAtLocationPayload `graphql:"inventoryBulkAdjustQuantityAtLocation(locationId: $locationId, inventoryItemAdjustments: $inventoryItemAdjustments)" json:"inventoryBulkAdjustQuantityAtLocation"`
 }
 
 type mutationInventoryActivate struct {
-	InventoryActivateResult InventoryActivateResult `graphql:"inventoryActivate(inventoryItemId: $itemID, locationId: $locationId)" json:"inventoryActivate"`
+	InventoryActivateResult model.InventoryActivatePayload `graphql:"inventoryActivate(inventoryItemId: $itemID, locationId: $locationId)" json:"inventoryActivate"`
 }
 
-type InventoryActivateResult struct {
-	UserErrors []UserErrors `json:"userErrors,omitempty"`
-}
-
-func (s *InventoryServiceOp) Update(id graphql.ID, input InventoryItemUpdateInput) error {
+func (s *InventoryServiceOp) Update(id graphql.ID, input *model.InventoryItemUpdateInput) error {
 	m := mutationInventoryItemUpdate{}
 	vars := map[string]interface{}{
 		"id":    id,
@@ -80,7 +48,7 @@ func (s *InventoryServiceOp) Update(id graphql.ID, input InventoryItemUpdateInpu
 	return nil
 }
 
-func (s *InventoryServiceOp) Adjust(locationID graphql.ID, input []InventoryAdjustItemInput) error {
+func (s *InventoryServiceOp) Adjust(locationID graphql.ID, input []*model.InventoryAdjustItemInput) error {
 	m := mutationInventoryBulkAdjustQuantityAtLocation{}
 	vars := map[string]interface{}{
 		"locationId":               locationID,

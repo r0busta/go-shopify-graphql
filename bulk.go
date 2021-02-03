@@ -12,19 +12,26 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/r0busta/go-shopify-graphql/v2/rand"
-	"github.com/r0busta/go-shopify-graphql/v2/utils"
+	"github.com/r0busta/go-shopify-graphql-model/graph/model"
+	"github.com/r0busta/go-shopify-graphql/v3/rand"
+	"github.com/r0busta/go-shopify-graphql/v3/utils"
 	"github.com/r0busta/graphql"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/guregu/null.v4"
+)
+
+const (
+	edgesFieldName = "Edges"
+	nodeFieldName  = "Node"
 )
 
 type BulkOperationService interface {
 	BulkQuery(query string, v interface{}) error
 
 	PostBulkQuery(query string) (graphql.ID, error)
-	GetCurrentBulkQuery() (CurrentBulkOperation, error)
+	GetCurrentBulkQuery() (*model.BulkOperation, error)
 	GetCurrentBulkQueryResultURL() (string, error)
-	WaitForCurrentBulkQuery(interval time.Duration) (CurrentBulkOperation, error)
+	WaitForCurrentBulkQuery(interval time.Duration) (*model.BulkOperation, error)
 	ShouldGetBulkQueryResultURL(id graphql.ID) (string, error)
 	CancelRunningBulkQuery() error
 }
@@ -33,43 +40,12 @@ type BulkOperationServiceOp struct {
 	client *Client
 }
 
-type queryCurrentBulkOperation struct {
-	CurrentBulkOperation CurrentBulkOperation
-}
-
-type CurrentBulkOperation struct {
-	ID             graphql.ID     `json:"id"`
-	Status         graphql.String `json:"status"`
-	ErrorCode      graphql.String `json:"errorCode"`
-	CreatedAt      graphql.String `json:"createdAt"`
-	CompletedAt    graphql.String `json:"completedAt"`
-	ObjectCount    graphql.String `json:"objectCount"`
-	FileSize       graphql.String `json:"fileSize"`
-	URL            graphql.String `json:"url"`
-	PartialDataURL graphql.String `json:"partialDataUrl"`
-	Query          graphql.String `json:"query"`
-}
-
-type bulkOperationRunQueryResult struct {
-	BulkOperation struct {
-		ID graphql.ID `json:"id"`
-	} `json:"bulkOperation"`
-	UserErrors []UserErrors `json:"userErrors"`
-}
-
 type mutationBulkOperationRunQuery struct {
-	BulkOperationRunQueryResult bulkOperationRunQueryResult `graphql:"bulkOperationRunQuery(query: $query)" json:"bulkOperationRunQuery"`
-}
-
-type bulkOperationCancelResult struct {
-	BulkOperation struct {
-		ID graphql.ID `json:"id"`
-	} `json:"bulkOperation"`
-	UserErrors []UserErrors `json:"userErrors"`
+	BulkOperationRunQueryResult model.BulkOperationRunQueryPayload `graphql:"bulkOperationRunQuery(query: $query)" json:"bulkOperationRunQuery"`
 }
 
 type mutationBulkOperationRunQueryCancel struct {
-	BulkOperationCancelResult bulkOperationCancelResult `graphql:"bulkOperationCancel(id: $id)" json:"bulkOperationCancel"`
+	BulkOperationCancelResult model.BulkOperationCancelPayload `graphql:"bulkOperationCancel(id: $id)" json:"bulkOperationCancel"`
 }
 
 var gidRegex *regexp.Regexp
@@ -81,7 +57,7 @@ func init() {
 func (s *BulkOperationServiceOp) PostBulkQuery(query string) (graphql.ID, error) {
 	m := mutationBulkOperationRunQuery{}
 	vars := map[string]interface{}{
-		"query": graphql.String(query),
+		"query": query,
 	}
 
 	err := s.client.gql.Mutate(context.Background(), &m, vars)
@@ -95,51 +71,54 @@ func (s *BulkOperationServiceOp) PostBulkQuery(query string) (graphql.ID, error)
 	return m.BulkOperationRunQueryResult.BulkOperation.ID, nil
 }
 
-func (s *BulkOperationServiceOp) GetCurrentBulkQuery() (CurrentBulkOperation, error) {
-	q := queryCurrentBulkOperation{}
+func (s *BulkOperationServiceOp) GetCurrentBulkQuery() (*model.BulkOperation, error) {
+	var q struct {
+		CurrentBulkOperation struct {
+			model.BulkOperation
+		}
+	}
 	err := s.client.gql.Query(context.Background(), &q, nil)
 	if err != nil {
-		return CurrentBulkOperation{}, err
+		return nil, err
 	}
-
-	return q.CurrentBulkOperation, nil
+	return &q.CurrentBulkOperation.BulkOperation, nil
 }
 
 func (s *BulkOperationServiceOp) GetCurrentBulkQueryResultURL() (url string, err error) {
 	return s.ShouldGetBulkQueryResultURL(nil)
 }
 
-func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(id graphql.ID) (url string, err error) {
+func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(id graphql.ID) (string, error) {
 	q, err := s.GetCurrentBulkQuery()
 	if err != nil {
-		return
+		return "", fmt.Errorf("error getting current bulk operation: %s", err)
 	}
 
 	if id != nil && q.ID != id {
-		err = fmt.Errorf("Bulk operation ID doesn't match, got=%v, want=%v", q.ID, id)
-		return
+		return "", fmt.Errorf("Bulk operation ID doesn't match, got=%v, want=%v", q.ID, id)
 	}
 
 	q, err = s.WaitForCurrentBulkQuery(1 * time.Second)
 	if q.Status != "COMPLETED" {
-		err = fmt.Errorf("Bulk operation didn't complete, status=%s, error_code=%s", q.Status, q.ErrorCode)
-		return
+		return "", fmt.Errorf("Bulk operation didn't complete, status=%s, error_code=%s", q.Status, q.ErrorCode)
 	}
 
-	if q.ErrorCode != "" {
-		err = fmt.Errorf("Bulk operation error: %s", q.ErrorCode)
-		return
+	if q.ErrorCode != nil && q.ErrorCode.String() != "" {
+		return "", fmt.Errorf("Bulk operation error: %s", q.ErrorCode)
 	}
 
-	if q.ObjectCount == "0" {
-		return
+	if q.ObjectCount.String == "0" {
+		return "", nil
 	}
 
-	url = string(q.URL)
-	return
+	if q.URL == nil {
+		return "", fmt.Errorf("empty URL result")
+	}
+
+	return q.URL.String, nil
 }
 
-func (s *BulkOperationServiceOp) WaitForCurrentBulkQuery(interval time.Duration) (CurrentBulkOperation, error) {
+func (s *BulkOperationServiceOp) WaitForCurrentBulkQuery(interval time.Duration) (*model.BulkOperation, error) {
 	q, err := s.GetCurrentBulkQuery()
 	if err != nil {
 		return q, fmt.Errorf("CurrentBulkOperation query error: %s", err)
@@ -171,7 +150,7 @@ func (s *BulkOperationServiceOp) CancelRunningBulkQuery() (err error) {
 
 		m := mutationBulkOperationRunQueryCancel{}
 		vars := map[string]interface{}{
-			"id": graphql.ID(operationID),
+			"id": operationID,
 		}
 
 		err = s.client.gql.Mutate(context.Background(), &m, vars)
@@ -267,7 +246,7 @@ func parseBulkQueryResult(resultFile string, out interface{}) (err error) {
 	reader := bufio.NewReader(f)
 	json := jsoniter.ConfigFastest
 
-	childrenLookup := make(map[string]interface{})
+	connectionSink := make(map[null.String]interface{})
 
 	for {
 		var line []byte
@@ -276,41 +255,59 @@ func parseBulkQueryResult(resultFile string, out interface{}) (err error) {
 			break
 		}
 
-		parentID := json.Get(line, "__parentId")
-		if parentID.LastError() == nil {
+		parentIDNode := json.Get(line, "__parentId")
+		if parentIDNode.LastError() == nil {
+			parentID := null.StringFrom(parentIDNode.ToString())
+
 			gid := json.Get(line, "id")
 			if gid.LastError() != nil {
 				return fmt.Errorf("Connection type must query `id` field")
 			}
-			childObjType, childrenFieldName, err := concludeObjectType(gid.ToString())
+			edgeType, nodeType, connectionFieldName, err := concludeObjectType(gid.ToString())
 			if err != nil {
 				return err
 			}
-			childItem := reflect.New(childObjType).Interface()
-			err = json.Unmarshal(line, &childItem)
+			node := reflect.New(nodeType).Interface()
+			err = json.Unmarshal(line, &node)
 			if err != nil {
 				return err
 			}
-			childItemVal := reflect.ValueOf(childItem).Elem()
+			nodeVal := reflect.ValueOf(node).Elem()
 
-			var childrenSlice reflect.Value
-			var children map[string]interface{}
-			if val, ok := childrenLookup[parentID.ToString()]; ok {
-				children = val.(map[string]interface{})
+			var edge interface{}
+			var nodeField reflect.Value
+			if edgeType.Kind() == reflect.Ptr {
+				edge = reflect.New(edgeType.Elem()).Interface()
+				nodeField = reflect.ValueOf(edge).Elem().FieldByName(nodeFieldName)
 			} else {
-				children = make(map[string]interface{})
+				edge = reflect.New(edgeType).Interface()
+				nodeField = reflect.ValueOf(edge).FieldByName(nodeFieldName)
+			}
+			edgeVal := reflect.ValueOf(edge)
+
+			if !nodeField.IsValid() {
+				return fmt.Errorf("Edge in the '%s' doesn't have the Node field", connectionFieldName)
+			}
+			nodeField.Set(nodeVal)
+
+			var edgesSlice reflect.Value
+			var edges map[string]interface{}
+			if val, ok := connectionSink[parentID]; ok {
+				edges = val.(map[string]interface{})
+			} else {
+				edges = make(map[string]interface{})
 			}
 
-			if val, ok := children[childrenFieldName]; ok {
-				childrenSlice = reflect.ValueOf(val)
+			if val, ok := edges[connectionFieldName]; ok {
+				edgesSlice = reflect.ValueOf(val)
 			} else {
-				childrenSlice = reflect.MakeSlice(reflect.SliceOf(childObjType), 0, 10)
+				edgesSlice = reflect.MakeSlice(reflect.SliceOf(edgeType), 0, 10)
 			}
 
-			childrenSlice = reflect.Append(childrenSlice, childItemVal)
+			edgesSlice = reflect.Append(edgesSlice, edgeVal)
 
-			children[childrenFieldName] = childrenSlice.Interface()
-			childrenLookup[parentID.ToString()] = children
+			edges[connectionFieldName] = edgesSlice.Interface()
+			connectionSink[parentID] = edges
 
 			continue
 		}
@@ -329,7 +326,10 @@ func parseBulkQueryResult(resultFile string, out interface{}) (err error) {
 		}
 	}
 
-	if len(childrenLookup) > 0 {
+	tmp, _ := json.MarshalIndent(connectionSink, "", "    ")
+	fmt.Println(string(tmp))
+
+	if len(connectionSink) > 0 {
 		for i := 0; i < outSlice.Len(); i++ {
 			parent := outSlice.Index(i)
 			if parent.Kind() == reflect.Ptr {
@@ -339,18 +339,33 @@ func parseBulkQueryResult(resultFile string, out interface{}) (err error) {
 			if parentIDField.IsZero() {
 				return fmt.Errorf("No ID field on the first level")
 			}
-			parentID := parentIDField.Interface().(string)
-			if children, ok := childrenLookup[parentID]; ok {
-				childrenVal := reflect.ValueOf(children)
-				iter := childrenVal.MapRange()
+			parentID := parentIDField.Interface().(null.String)
+			if connection, ok := connectionSink[parentID]; ok {
+				edgeVal := reflect.ValueOf(connection)
+				iter := edgeVal.MapRange()
 				for iter.Next() {
-					k := iter.Key()
-					v := reflect.ValueOf(iter.Value().Interface())
-					field := parent.FieldByName(k.String())
-					if !field.IsValid() {
-						return fmt.Errorf("Field '%s' not defined on the parent type %s", k.String(), parent.Type().String())
+					connectionName := iter.Key()
+					connectionField := parent.FieldByName(connectionName.String())
+					if !connectionField.IsValid() {
+						return fmt.Errorf("Connection '%s' is not defined on the parent type %s", connectionName.String(), parent.Type().String())
 					}
-					field.Set(v)
+					var connectionValue reflect.Value
+					var edgesField reflect.Value
+					if connectionField.Kind() == reflect.Ptr {
+						connectionValue = reflect.ValueOf(reflect.New(connectionField.Type().Elem()).Interface())
+						edgesField = connectionValue.Elem().FieldByName(edgesFieldName)
+					} else {
+						connectionValue = reflect.ValueOf(reflect.New(connectionField.Type()).Interface())
+						edgesField = connectionValue.Elem().FieldByName(edgesFieldName)
+					}
+					if !edgesField.IsValid() {
+						return fmt.Errorf("Connection %s in the '%s' doesn't have the Edges field", connectionName.String(), parent.Type().String())
+					}
+
+					edges := reflect.ValueOf(iter.Value().Interface())
+					edgesField.Set(edges)
+
+					connectionField.Set(connectionValue)
 				}
 			}
 		}
@@ -364,26 +379,26 @@ func parseBulkQueryResult(resultFile string, out interface{}) (err error) {
 	return
 }
 
-func concludeObjectType(gid string) (reflect.Type, string, error) {
+func concludeObjectType(gid string) (reflect.Type, reflect.Type, string, error) {
 	submatches := gidRegex.FindStringSubmatch(gid)
 	if len(submatches) != 2 {
-		return reflect.TypeOf(nil), "", fmt.Errorf("malformed gid=`%s`", gid)
+		return reflect.TypeOf(nil), reflect.TypeOf(nil), "", fmt.Errorf("malformed gid=`%s`", gid)
 	}
 	resource := submatches[1]
 	switch resource {
 	case "LineItem":
-		return reflect.TypeOf(LineItem{}), fmt.Sprintf("%ss", resource), nil
+		return reflect.TypeOf(&model.LineItemEdge{}), reflect.TypeOf(&model.LineItem{}), fmt.Sprintf("%ss", resource), nil
 	case "FulfillmentOrderLineItem":
-		return reflect.TypeOf(FulfillmentOrderLineItem{}), fmt.Sprintf("%ss", resource), nil
+		return reflect.TypeOf(&model.FulfillmentOrderLineItemEdge{}), reflect.TypeOf(model.FulfillmentOrderLineItem{}), fmt.Sprintf("%ss", resource), nil
 	case "Metafield":
-		return reflect.TypeOf(Metafield{}), fmt.Sprintf("%ss", resource), nil
+		return reflect.TypeOf(&model.MetafieldEdge{}), reflect.TypeOf(&model.Metafield{}), fmt.Sprintf("%ss", resource), nil
 	case "Order":
-		return reflect.TypeOf(Order{}), fmt.Sprintf("%ss", resource), nil
+		return reflect.TypeOf(&model.OrderEdge{}), reflect.TypeOf(&model.Order{}), fmt.Sprintf("%ss", resource), nil
 	case "Product":
-		return reflect.TypeOf(ProductBulkResult{}), fmt.Sprintf("%ss", resource), nil
+		return reflect.TypeOf(&model.ProductEdge{}), reflect.TypeOf(&model.Product{}), fmt.Sprintf("%ss", resource), nil
 	case "ProductVariant":
-		return reflect.TypeOf(ProductVariant{}), fmt.Sprintf("%ss", resource), nil
+		return reflect.TypeOf(&model.ProductVariantEdge{}), reflect.TypeOf(&model.ProductVariant{}), "Variants", nil
 	default:
-		return reflect.TypeOf(nil), "", fmt.Errorf("`%s` not implemented type", resource)
+		return reflect.TypeOf(nil), reflect.TypeOf(nil), "", fmt.Errorf("`%s` not implemented type", resource)
 	}
 }
