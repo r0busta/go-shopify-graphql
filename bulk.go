@@ -3,6 +3,7 @@ package shopify
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -15,7 +16,6 @@ import (
 	"github.com/r0busta/go-shopify-graphql-model/graph/model"
 	"github.com/r0busta/go-shopify-graphql/v3/rand"
 	"github.com/r0busta/go-shopify-graphql/v3/utils"
-	"github.com/r0busta/graphql"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/guregu/null.v4"
 )
@@ -28,11 +28,11 @@ const (
 type BulkOperationService interface {
 	BulkQuery(query string, v interface{}) error
 
-	PostBulkQuery(query string) (graphql.ID, error)
+	PostBulkQuery(query string) (null.String, error)
 	GetCurrentBulkQuery() (*model.BulkOperation, error)
 	GetCurrentBulkQueryResultURL() (string, error)
 	WaitForCurrentBulkQuery(interval time.Duration) (*model.BulkOperation, error)
-	ShouldGetBulkQueryResultURL(id graphql.ID) (string, error)
+	ShouldGetBulkQueryResultURL(id null.String) (string, error)
 	CancelRunningBulkQuery() error
 }
 
@@ -54,18 +54,19 @@ func init() {
 	gidRegex = regexp.MustCompile(`^gid://shopify/(\w+)/\d+$`)
 }
 
-func (s *BulkOperationServiceOp) PostBulkQuery(query string) (graphql.ID, error) {
+func (s *BulkOperationServiceOp) PostBulkQuery(query string) (null.String, error) {
 	m := mutationBulkOperationRunQuery{}
 	vars := map[string]interface{}{
-		"query": query,
+		"query": null.StringFrom(query),
 	}
 
 	err := s.client.gql.Mutate(context.Background(), &m, vars)
 	if err != nil {
-		return nil, err
+		return null.StringFromPtr(nil), fmt.Errorf("error posting bulk query: %s", err)
 	}
 	if len(m.BulkOperationRunQueryResult.UserErrors) > 0 {
-		return nil, fmt.Errorf("%+v", m.BulkOperationRunQueryResult.UserErrors)
+		errors, _ := json.MarshalIndent(m.BulkOperationRunQueryResult.UserErrors, "", "    ")
+		return null.StringFromPtr(nil), fmt.Errorf("error posting bulk query: %s", errors)
 	}
 
 	return m.BulkOperationRunQueryResult.BulkOperation.ID, nil
@@ -85,16 +86,16 @@ func (s *BulkOperationServiceOp) GetCurrentBulkQuery() (*model.BulkOperation, er
 }
 
 func (s *BulkOperationServiceOp) GetCurrentBulkQueryResultURL() (url string, err error) {
-	return s.ShouldGetBulkQueryResultURL(nil)
+	return s.ShouldGetBulkQueryResultURL(null.StringFromPtr(nil))
 }
 
-func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(id graphql.ID) (string, error) {
+func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(id null.String) (string, error) {
 	q, err := s.GetCurrentBulkQuery()
 	if err != nil {
 		return "", fmt.Errorf("error getting current bulk operation: %s", err)
 	}
 
-	if id != nil && q.ID != id {
+	if id.Ptr() != nil && q.ID != id {
 		return "", fmt.Errorf("Bulk operation ID doesn't match, got=%v, want=%v", q.ID, id)
 	}
 
@@ -150,7 +151,7 @@ func (s *BulkOperationServiceOp) CancelRunningBulkQuery() (err error) {
 
 		m := mutationBulkOperationRunQueryCancel{}
 		vars := map[string]interface{}{
-			"id": operationID,
+			"id": operationID.String,
 		}
 
 		err = s.client.gql.Mutate(context.Background(), &m, vars)
@@ -189,7 +190,7 @@ func (s *BulkOperationServiceOp) BulkQuery(query string, out interface{}) error 
 		return err
 	}
 
-	if id == nil {
+	if id.Ptr() == nil {
 		return fmt.Errorf("Posted operation ID is nil")
 	}
 
