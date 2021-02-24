@@ -2,7 +2,6 @@ package shopify
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -234,8 +233,7 @@ func (s *ProductServiceOp) getPage(id graphql.ID, cursor string) (*model.Product
 	if err != nil {
 		return nil, err
 	}
-	tmp, _ := json.MarshalIndent(out, "", "	")
-	fmt.Println(string(tmp))
+
 	return out.Product, nil
 }
 
@@ -257,8 +255,7 @@ func (s *ProductServiceOp) Create(product *model.ProductInput, media []*model.Cr
 		"input": product,
 		"media": media,
 	}
-	tmp, _ := json.MarshalIndent(vars, "", "	")
-	fmt.Println(string(tmp))
+
 	err := s.client.gql.Mutate(context.Background(), &m, vars)
 	if err != nil {
 		return "", err

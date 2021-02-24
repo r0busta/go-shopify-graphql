@@ -327,9 +327,6 @@ func parseBulkQueryResult(resultFile string, out interface{}) (err error) {
 		}
 	}
 
-	tmp, _ := json.MarshalIndent(connectionSink, "", "    ")
-	fmt.Println(string(tmp))
-
 	if len(connectionSink) > 0 {
 		for i := 0; i < outSlice.Len(); i++ {
 			parent := outSlice.Index(i)
