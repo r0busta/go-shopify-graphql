@@ -8,7 +8,7 @@ import (
 )
 
 type FulfillmentService interface {
-	Create(input *model.FulfillmentV2Input) error
+	Create(input model.FulfillmentV2Input) error
 }
 
 type FulfillmentServiceOp struct {
@@ -19,7 +19,7 @@ type mutationFulfillmentCreateV2 struct {
 	FulfillmentCreateV2Result model.FulfillmentCreateV2Payload `graphql:"fulfillmentCreateV2(fulfillment: $fulfillment)" json:"fulfillmentCreateV2"`
 }
 
-func (s *FulfillmentServiceOp) Create(fulfillment *model.FulfillmentV2Input) error {
+func (s *FulfillmentServiceOp) Create(fulfillment model.FulfillmentV2Input) error {
 	m := mutationFulfillmentCreateV2{}
 
 	vars := map[string]interface{}{
