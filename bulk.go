@@ -387,7 +387,7 @@ func concludeObjectType(gid string) (reflect.Type, reflect.Type, string, error) 
 	case "LineItem":
 		return reflect.TypeOf(&model.LineItemEdge{}), reflect.TypeOf(&model.LineItem{}), fmt.Sprintf("%ss", resource), nil
 	case "FulfillmentOrderLineItem":
-		return reflect.TypeOf(&model.FulfillmentOrderLineItemEdge{}), reflect.TypeOf(&model.FulfillmentOrderLineItem{}), fmt.Sprintf("%ss", resource), nil
+		return reflect.TypeOf(&model.FulfillmentOrderLineItemEdge{}), reflect.TypeOf(&model.FulfillmentOrderLineItem{}), "LineItems", nil
 	case "Metafield":
 		return reflect.TypeOf(&model.MetafieldEdge{}), reflect.TypeOf(&model.Metafield{}), fmt.Sprintf("%ss", resource), nil
 	case "Order":
