@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"ecommerce-integrations/pkg/graphql"
+	"github.com/es-hs/go-shopify-graphql/graphql"
 )
 
 const (

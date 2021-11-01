@@ -2,11 +2,12 @@ package graphql
 
 import (
 	"bytes"
-	"ecommerce-integrations/pkg/graphql/ident"
 	"encoding/json"
 	"io"
 	"reflect"
 	"sort"
+
+	"github.com/es-hs/go-shopify-graphql/graphql/ident"
 )
 
 func constructQuery(v interface{}, variables map[string]interface{}) string {
