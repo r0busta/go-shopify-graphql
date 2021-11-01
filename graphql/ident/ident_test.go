@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"ecommerce-integrations/pkg/graphql/ident"
+	"github.com/es-hs/go-shopify-graphql/pkg/graphql/ident"
 )
 
 func Example_lowerCamelCaseToMixedCaps() {

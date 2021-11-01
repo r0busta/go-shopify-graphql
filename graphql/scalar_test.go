@@ -3,7 +3,7 @@ package graphql_test
 import (
 	"testing"
 
-	"ecommerce-integrations/pkg/graphql"
+	"github.com/es-hs/go-shopify-graphql/pkg/graphql"
 )
 
 func TestNewScalars(t *testing.T) {

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"ecommerce-integrations/pkg/graphql"
-	"ecommerce-integrations/pkg/graphql/internal/jsonutil"
+	"github.com/es-hs/go-shopify-graphql/pkg/graphql"
+	"github.com/es-hs/go-shopify-graphql/pkg/graphql/internal/jsonutil"
 )
 
 func TestUnmarshalGraphQL(t *testing.T) {
