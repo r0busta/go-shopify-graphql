@@ -22,7 +22,7 @@ package main
 import (
     "fmt"
 
-    shopify "github.com/r0busta/go-shopify-graphql/v3"
+    shopify "github.com/es-hs/go-shopify-graphql/v3"
 )
 
 func main() {

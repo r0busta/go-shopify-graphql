@@ -3,8 +3,9 @@ package shopify
 import (
 	"os"
 
-	graphqlclient "github.com/r0busta/go-shopify-graphql/v3/graphql"
-	"github.com/r0busta/graphql"
+	graphqlclient "github.com/es-hs/go-shopify-graphql/graph"
+	"github.com/es-hs/go-shopify-graphql/graphql"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,6 +25,7 @@ type Client struct {
 	Location      LocationService
 	Metafield     MetafieldService
 	BulkOperation BulkOperationService
+	Webhook       WebhookService
 }
 
 type ListOptions struct {
@@ -60,6 +62,7 @@ func NewClient(apiKey string, password string, storeName string) *Client {
 	c.Location = &LocationServiceOp{client: c}
 	c.Metafield = &MetafieldServiceOp{client: c}
 	c.BulkOperation = &BulkOperationServiceOp{client: c}
+	c.Webhook = &WebhookServiceOp{client: c}
 
 	return c
 }
@@ -74,4 +77,30 @@ func newShopifyGraphQLClient(apiKey string, password string, storeName string) *
 
 func (c *Client) GraphQLClient() *graphql.Client {
 	return c.gql
+}
+
+func NewClientWithToken(apiKey string, storeName string) *Client {
+	c := &Client{gql: newShopifyGraphQLClientWithToken(apiKey, storeName)}
+
+	c.Product = &ProductServiceOp{client: c}
+	c.Variant = &VariantServiceOp{client: c}
+	// c.Inventory = &InventoryServiceOp{client: c}
+	c.Collection = &CollectionServiceOp{client: c}
+	// c.Order = &OrderServiceOp{client: c}
+	// c.Fulfillment = &FulfillmentServiceOp{client: c}
+	// c.Location = &LocationServiceOp{client: c}
+	c.Metafield = &MetafieldServiceOp{client: c}
+	c.BulkOperation = &BulkOperationServiceOp{client: c}
+	c.Webhook = &WebhookServiceOp{client: c}
+
+	return c
+}
+
+func newShopifyGraphQLClientWithToken(token string, storeName string) *graphql.Client {
+	opts := []graphqlclient.Option{
+		graphqlclient.WithVersion(shopifyAPIVersion),
+		graphqlclient.WithToken(token),
+	}
+	// todo no more fixed storeName
+	return graphqlclient.NewClient(storeName, opts...)
 }

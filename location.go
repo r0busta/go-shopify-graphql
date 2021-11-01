@@ -3,19 +3,23 @@ package shopify
 import (
 	"context"
 
-	"github.com/r0busta/go-shopify-graphql-model/graph/model"
-	"github.com/r0busta/graphql"
+	"github.com/es-hs/go-shopify-graphql/graphql"
 )
 
 type LocationService interface {
-	Get(id graphql.ID) (*model.Location, error)
+	Get(id graphql.ID) (*Location, error)
 }
 
 type LocationServiceOp struct {
 	client *Client
 }
 
-func (s *LocationServiceOp) Get(id graphql.ID) (*model.Location, error) {
+type Location struct {
+	ID   graphql.ID     `json:"id,omitempty"`
+	Name graphql.String `json:"name,omitempty"`
+}
+
+func (s *LocationServiceOp) Get(id graphql.ID) (*Location, error) {
 	q := `query location($id: ID!) {
 		location(id: $id){
 			id
@@ -27,9 +31,9 @@ func (s *LocationServiceOp) Get(id graphql.ID) (*model.Location, error) {
 		"id": id,
 	}
 
-	var out struct {
-		*model.Location `json:"location"`
-	}
+	out := struct {
+		Location *Location `json:"location"`
+	}{}
 	err := s.client.gql.QueryString(context.Background(), q, vars, &out)
 	if err != nil {
 		return nil, err

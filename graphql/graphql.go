@@ -1,83 +1,127 @@
-package graphqlclient
+package graphql
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
-	"github.com/r0busta/graphql"
+	"golang.org/x/net/context/ctxhttp"
 )
 
-const (
-	shopifyBaseDomain        = "myshopify.com"
-	shopifyAccessTokenHeader = "X-Shopify-Access-Token"
-)
+// Client is a GraphQL client.
+type Client struct {
+	url        string // GraphQL server URL.
+	httpClient *http.Client
+}
 
-var (
-	apiProtocol   = "https"
-	apiPathPrefix = "admin/api"
-	apiEndpoint   = "graphql.json"
-)
+// NewClient creates a GraphQL client targeting the specified GraphQL server URL.
+// If httpClient is nil, then http.DefaultClient is used.
+func NewClient(url string, httpClient *http.Client) *Client {
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	return &Client{
+		url:        url,
+		httpClient: httpClient,
+	}
+}
 
-// Option is used to configure options
-type Option func(t *transport)
+// QueryString executes a single GraphQL query request,
+// using the given raw query `q` and populating the response into the `v`.
+// `q` should be a correct GraphQL request string that corresponds to the GraphQL schema.
+func (c *Client) QueryString(ctx context.Context, q string, variables map[string]interface{}, v interface{}) error {
+	return c.do(ctx, q, variables, v)
+}
 
-// WithVersion optionally sets the API version if the passed string is valid
-func WithVersion(apiVersion string) Option {
-	return func(t *transport) {
-		if apiVersion != "" {
-			apiPathPrefix = fmt.Sprintf("admin/api/%s", apiVersion)
-		} else {
-			apiPathPrefix = "admin/api"
+// Query executes a single GraphQL query request,
+// with a query derived from q, populating the response into it.
+// q should be a pointer to struct that corresponds to the GraphQL schema.
+func (c *Client) Query(ctx context.Context, q interface{}, variables map[string]interface{}) error {
+	query := constructQuery(q, variables)
+	return c.do(ctx, query, variables, q)
+}
+
+// Mutate executes a single GraphQL mutation request,
+// with a mutation derived from m, populating the response into it.
+// m should be a pointer to struct that corresponds to the GraphQL schema.
+func (c *Client) Mutate(ctx context.Context, m interface{}, variables map[string]interface{}) error {
+	query := constructMutation(m, variables)
+	fmt.Println(query)
+	// return nil
+	return c.do(ctx, query, variables, m)
+}
+
+// do executes a single GraphQL operation.
+func (c *Client) do(ctx context.Context, query string, variables map[string]interface{}, v interface{}) error {
+	in := struct {
+		Query     string                 `json:"query"`
+		Variables map[string]interface{} `json:"variables,omitempty"`
+	}{
+		Query:     query,
+		Variables: variables,
+	}
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(in)
+	if err != nil {
+		return err
+	}
+	resp, err := ctxhttp.Post(ctx, c.httpClient, c.url, "application/json", &buf)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return fmt.Errorf("non-200 OK status code: %v body: %q", resp.Status, body)
+	}
+	var out struct {
+		Data   *json.RawMessage
+		Errors errors
+		//Extensions interface{} // Unused.
+	}
+	err = json.NewDecoder(resp.Body).Decode(&out)
+	if err != nil {
+		// TODO: Consider including response body in returned error, if deemed helpful.
+		return err
+	}
+	// xx := make(map[string]interface{})
+	if out.Data != nil {
+		err := json.Unmarshal(*out.Data, v)
+		if err != nil {
+			// TODO: Consider including response body in returned error, if deemed helpful.
+			return err
 		}
 	}
+	if len(out.Errors) > 0 {
+		return out.Errors
+	}
+	return nil
 }
 
-// WithToken optionally sets oauth token
-func WithToken(token string) Option {
-	return func(t *transport) {
-		t.accessToken = token
+// errors represents the "errors" array in a response from a GraphQL server.
+// If returned via error interface, the slice is expected to contain at least 1 element.
+//
+// Specification: https://facebook.github.io/graphql/#sec-Errors.
+type errors []struct {
+	Message   string
+	Locations []struct {
+		Line   int
+		Column int
 	}
 }
 
-// WithPrivateAppAuth optionally sets private app credentials
-func WithPrivateAppAuth(apiKey string, password string) Option {
-	return func(t *transport) {
-		t.apiKey = apiKey
-		t.password = password
-	}
+// Error implements error interface.
+func (e errors) Error() string {
+	return e[0].Message
 }
 
-type transport struct {
-	accessToken string
-	apiKey      string
-	password    string
-}
+type operationType uint8
 
-func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	if t.accessToken != "" {
-		req.Header.Set(shopifyAccessTokenHeader, t.accessToken)
-	} else if t.apiKey != "" && t.password != "" {
-		req.SetBasicAuth(t.apiKey, t.password)
-	}
-
-	return http.DefaultTransport.RoundTrip(req)
-}
-
-// NewClient creates a new client (in fact, just a simple wrapper for a graphql.Client)
-func NewClient(shopName string, opts ...Option) *graphql.Client {
-	transport := &transport{}
-
-	for _, opt := range opts {
-		opt(transport)
-	}
-
-	httpClient := &http.Client{Transport: transport}
-
-	url := buildAPIEndpoint(shopName)
-
-	return graphql.NewClient(url, httpClient)
-}
-
-func buildAPIEndpoint(shopName string) string {
-	return fmt.Sprintf("%s://%s.%s/%s/%s", apiProtocol, shopName, shopifyBaseDomain, apiPathPrefix, apiEndpoint)
-}
+const (
+	queryOperation operationType = iota
+	mutationOperation
+	//subscriptionOperation // Unused.
+)
