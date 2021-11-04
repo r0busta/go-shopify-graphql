@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	_errors "errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -95,11 +94,11 @@ func TestQuery(t *testing.T) {
 					   ],
 					   "extensions":{
 						  "cost":{
-							 "requestedQueryCost":202,
+							 "requestedQueryCost":452,
 							 "actualQueryCost":null,
 							 "throttleStatus":{
 								"maximumAvailable":1000.0,
-								"currentlyAvailable":118,
+								"currentlyAvailable":202,
 								"restoreRate":50.0
 							 }
 						  }
@@ -124,13 +123,12 @@ func TestQuery(t *testing.T) {
 		c := NewClient(tc.server.URL, tc.server.Client())
 		var m map[string]interface{}
 		var v interface{}
-		//t1 := time.Now()
-		fmt.Println("hehehe")
+		t1 := time.Now()
 		_ = c.do(context.Background(), tc.name, m, v)
-		//t2 := time.Now()
-		//if t1.Sub(t2)-tc.Duration < 1 {
-		//	t.Error("too much time")
-		//}
+		t2 := time.Now()
+		if t1.Sub(t2)-tc.Duration < 1 {
+			t.Log("too much time")
+		}
 	})
 
 }

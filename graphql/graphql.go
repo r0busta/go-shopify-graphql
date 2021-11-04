@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"golang.org/x/net/context/ctxhttp"
 	"io/ioutil"
-	"math"
 	"net/http"
 	"time"
 )
@@ -96,13 +95,12 @@ func (c *Client) do(ctx context.Context, query string, variables map[string]inte
 				return err
 			}
 			requestedQueryCost := extensions.d("cost").s("requestedQueryCost")
-			//actualQueryCost := extensions.d("cost").s("actualQueryCost")
 			throttleStatus := extensions.d("cost").d("throttleStatus")
-			//maximumAvailable := throttleStatus.s("maximumAvailable")
 			currentlyAvailable := throttleStatus.s("currentlyAvailable")
 			restoreRate := throttleStatus.s("restoreRate")
 			if currentlyAvailable < requestedQueryCost {
-				time.Sleep(time.Duration(math.Abs(requestedQueryCost-currentlyAvailable) / restoreRate))
+				timeSleep := int((requestedQueryCost - currentlyAvailable) / restoreRate)
+				time.Sleep(time.Duration(timeSleep) * time.Second)
 			}
 		}
 	}
