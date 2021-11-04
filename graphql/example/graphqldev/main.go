@@ -14,7 +14,7 @@ import (
 	"net/http/httptest"
 	"os"
 
-	"github.com/es-hs/go-shopify-graphql/pkg/graphql"
+	"github.com/es-hs/go-shopify-graphql/graphql"
 
 	graphqlserver "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/example/starwars"

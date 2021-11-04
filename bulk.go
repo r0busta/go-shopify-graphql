@@ -150,7 +150,7 @@ func (s *BulkOperationServiceOp) WaitForCurrentBulkQuery(interval time.Duration)
 	}
 
 	for q.Status == "CREATED" || q.Status == "RUNNING" || q.Status == "CANCELING" {
-		log.Println("Bulk operation is still %s...", q.Status)
+		log.Printf("Bulk operation is still %s...", q.Status)
 		time.Sleep(interval)
 
 		q, err = s.GetCurrentBulkQuery()
@@ -158,7 +158,7 @@ func (s *BulkOperationServiceOp) WaitForCurrentBulkQuery(interval time.Duration)
 			return q, fmt.Errorf("CurrentBulkOperation query error: %s", err)
 		}
 	}
-	log.Println("Bulk operation ready, latest status=%s", q.Status)
+	log.Printf("Bulk operation ready, latest status=%s", q.Status)
 
 	return q, nil
 }
