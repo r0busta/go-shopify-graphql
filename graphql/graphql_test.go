@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -81,60 +80,59 @@ func TestQuery(t *testing.T) {
 		server           *httptest.Server
 		expectedResponse *Response
 		expectedErr      error
+		Duration         time.Duration
 	}{
 		{
 			name: "throtled_query",
 			server: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				os.Create("/home/dragonborn/work/ES-HL/pull/go-shopify-graphql-modified/go-shopify-graphql/graphql/testttttttttttttttttt.go")
-				fmt.Println("in mock serverrrrrrrrrrrrrrrrrrrrrr")
-				var in struct {
-					Query     string                 `json:"query"`
-					Variables map[string]interface{} `json:"variables,omitempty"`
-				}
-				_ = json.NewDecoder(r.Body).Decode(&in)
-				if timeNow.Sub(time.Now()) < 2*time.Second {
+				if timeNow.Sub(time.Now())-time.Second < 5 {
 					w.WriteHeader(http.StatusOK)
-					w.Write([]byte(`{"id": 1, "name": "kyle", "description": "novice gopher"}`))
+					w.Write([]byte(`{
+					   "errors":[
+						  {
+							 "message":"Throttled"
+						  }
+					   ],
+					   "extensions":{
+						  "cost":{
+							 "requestedQueryCost":202,
+							 "actualQueryCost":null,
+							 "throttleStatus":{
+								"maximumAvailable":1000.0,
+								"currentlyAvailable":118,
+								"restoreRate":50.0
+							 }
+						  }
+					   }
+					}`))
+				} else {
+					w.WriteHeader(http.StatusOK)
 				}
-				// if in.Query == "throtled_query" {
-				// 	w.WriteHeader(http.StatusOK)
-				// 	w.Write([]byte(`{"id": 1, "name": "kyle", "description": "novice gopher"}`))
-				// }
-				// if in.Query == "nice_query" {
-				// 	w.WriteHeader(http.StatusOK)
-				// 	w.Write([]byte(`{"id": 1, "name": "kyle", "description": "novice gopher"}`))
-				// }
 			})),
 			expectedResponse: &Response{
 				ID:          1,
 				Name:        "kyle",
 				Description: "novice gopher",
 			},
+			Duration:    5 * time.Second,
 			expectedErr: nil,
 		},
 	}
-	for _, tc := range testTable {
-		t.Run(tc.name, func(t *testing.T) {
-			defer tc.server.Close()
-			c := NewClient(tc.server.URL, tc.server.Client())
-			var m map[string]interface{}
-			var v interface{}
-			t1 := time.Now()
-			fmt.Println("hehehe")
-			_ = c.do(context.Background(), tc.name, m, v)
-			t2 := time.Now()
-			if t1.Sub(t2) < 2*time.Second {
-				t.Error("too much time")
-			}
-			// resp, err := MakeHTTPCall(tc.server.URL)
-			// if !reflect.DeepEqual(resp, tc.expectedResponse) {
-			// 	t.Errorf("expected (%v), got (%v)", tc.expectedResponse, resp)
-			// }
-			// if !_errors.Is(err, tc.expectedErr) {
-			// 	t.Errorf("expected (%v), got (%v)", tc.expectedErr, err)
-			// }
-		})
-	}
+	tc := testTable[0]
+	t.Run(tc.name, func(t *testing.T) {
+		defer tc.server.Close()
+		c := NewClient(tc.server.URL, tc.server.Client())
+		var m map[string]interface{}
+		var v interface{}
+		//t1 := time.Now()
+		fmt.Println("hehehe")
+		_ = c.do(context.Background(), tc.name, m, v)
+		//t2 := time.Now()
+		//if t1.Sub(t2)-tc.Duration < 1 {
+		//	t.Error("too much time")
+		//}
+	})
+
 }
 
 // type API struct {

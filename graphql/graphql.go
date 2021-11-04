@@ -5,10 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-
 	"golang.org/x/net/context/ctxhttp"
+	"io/ioutil"
+	"math"
+	"net/http"
+	"time"
 )
 
 // Client is a GraphQL client.
@@ -78,11 +79,33 @@ func (c *Client) do(ctx context.Context, query string, variables map[string]inte
 		return fmt.Errorf("non-200 OK status code: %v body: %q", resp.Status, body)
 	}
 	var out struct {
-		Data   *json.RawMessage
-		Errors errors
-		//Extensions interface{} // Unused.
+		Data       *json.RawMessage
+		Errors     errors
+		Extensions interface{} // Unused.
 	}
 	err = json.NewDecoder(resp.Body).Decode(&out)
+	if len(out.Errors) > 0 {
+		if out.Errors[0].Message == "Throttled" {
+			b, err := json.Marshal(out.Extensions)
+			if err != nil {
+				return err
+			}
+			var extensions dict
+			err = json.Unmarshal(b, &extensions)
+			if err != nil {
+				return err
+			}
+			requestedQueryCost := extensions.d("cost").s("requestedQueryCost")
+			//actualQueryCost := extensions.d("cost").s("actualQueryCost")
+			throttleStatus := extensions.d("cost").d("throttleStatus")
+			//maximumAvailable := throttleStatus.s("maximumAvailable")
+			currentlyAvailable := throttleStatus.s("currentlyAvailable")
+			restoreRate := throttleStatus.s("restoreRate")
+			if currentlyAvailable < requestedQueryCost {
+				time.Sleep(time.Duration(math.Abs(requestedQueryCost-currentlyAvailable) / restoreRate))
+			}
+		}
+	}
 	if err != nil {
 		// TODO: Consider including response body in returned error, if deemed helpful.
 		return err
@@ -99,6 +122,28 @@ func (c *Client) do(ctx context.Context, query string, variables map[string]inte
 		return out.Errors
 	}
 	return nil
+}
+
+// Accessing Nested Map of Type map[string]interface{} in Golang
+// struct is the best option, but if you insist,
+// you can add a type declaration for a map, then you can add methods to help with the type assertions:
+
+type dict map[string]interface{}
+
+// convert first index to map that has interface value.
+func (d dict) d(k string) dict {
+	if d[k] == nil {
+		return nil
+	}
+	return d[k].(map[string]interface{})
+}
+
+// convert the item value to string
+func (d dict) s(k string) float64 {
+	if d[k] == nil {
+		return 0
+	}
+	return d[k].(float64)
 }
 
 // errors represents the "errors" array in a response from a GraphQL server.
