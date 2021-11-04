@@ -137,6 +137,67 @@ func TestQuery(t *testing.T) {
 	}
 }
 
+func TestSleepWhenRateLimitQuery(t *testing.T) {
+	timeNow := time.Now()
+	testTable := []struct {
+		name             string
+		server           *httptest.Server
+		expectedResponse *Response
+		expectedErr      error
+		Duration         time.Duration
+	}{
+		{
+			name: "throtled_query",
+			server: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if timeNow.Sub(time.Now())-time.Second < 5 {
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte(`{
+					   "errors":[
+						  {
+							 "message":"Throttled"
+						  }
+					   ],
+					   "extensions":{
+						  "cost":{
+							 "requestedQueryCost":452,
+							 "actualQueryCost":null,
+							 "throttleStatus":{
+								"maximumAvailable":1000.0,
+								"currentlyAvailable":202,
+								"restoreRate":50.0
+							 }
+						  }
+					   }
+					}`))
+				} else {
+					w.WriteHeader(http.StatusOK)
+				}
+			})),
+			expectedResponse: &Response{
+				ID:          1,
+				Name:        "kyle",
+				Description: "novice gopher",
+			},
+			Duration:    5 * time.Second,
+			expectedErr: nil,
+		},
+	}
+	tc := testTable[0]
+	t.Run(tc.name, func(t *testing.T) {
+		defer tc.server.Close()
+		c := NewClient(tc.server.URL, tc.server.Client())
+		var m map[string]interface{}
+		var v interface{}
+		t1 := time.Now()
+		_ = c.do(context.Background(), tc.name, m, v)
+		t2 := time.Now()
+		if t1.Sub(t2)-tc.Duration < 1 {
+			t.Log("too much time")
+		}
+	})
+
+}
+
 // type API struct {
 // 	Client  *http.Client
 // 	baseURL string
