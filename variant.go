@@ -8,7 +8,7 @@ import (
 )
 
 type VariantService interface {
-	Update(variant *model.ProductVariantInput) error
+	Update(variant model.ProductVariantInput) error
 }
 
 type VariantServiceOp struct {
@@ -19,7 +19,7 @@ type mutationProductVariantUpdate struct {
 	ProductVariantUpdateResult model.ProductVariantUpdatePayload `graphql:"productVariantUpdate(input: $input)" json:"productVariantUpdate"`
 }
 
-func (s *VariantServiceOp) Update(variant *model.ProductVariantInput) error {
+func (s *VariantServiceOp) Update(variant model.ProductVariantInput) error {
 	m := mutationProductVariantUpdate{}
 
 	vars := map[string]interface{}{

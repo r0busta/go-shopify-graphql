@@ -9,8 +9,8 @@ import (
 )
 
 type InventoryService interface {
-	Update(id graphql.ID, input *model.InventoryItemUpdateInput) error
-	Adjust(locationID graphql.ID, input []*model.InventoryAdjustItemInput) error
+	Update(id graphql.ID, input model.InventoryItemUpdateInput) error
+	Adjust(locationID graphql.ID, input []model.InventoryAdjustItemInput) error
 	ActivateInventory(locationID graphql.ID, id graphql.ID) error
 }
 
@@ -30,7 +30,7 @@ type mutationInventoryActivate struct {
 	InventoryActivateResult model.InventoryActivatePayload `graphql:"inventoryActivate(inventoryItemId: $itemID, locationId: $locationId)" json:"inventoryActivate"`
 }
 
-func (s *InventoryServiceOp) Update(id graphql.ID, input *model.InventoryItemUpdateInput) error {
+func (s *InventoryServiceOp) Update(id graphql.ID, input model.InventoryItemUpdateInput) error {
 	m := mutationInventoryItemUpdate{}
 	vars := map[string]interface{}{
 		"id":    id,
@@ -48,7 +48,7 @@ func (s *InventoryServiceOp) Update(id graphql.ID, input *model.InventoryItemUpd
 	return nil
 }
 
-func (s *InventoryServiceOp) Adjust(locationID graphql.ID, input []*model.InventoryAdjustItemInput) error {
+func (s *InventoryServiceOp) Adjust(locationID graphql.ID, input []model.InventoryAdjustItemInput) error {
 	m := mutationInventoryBulkAdjustQuantityAtLocation{}
 	vars := map[string]interface{}{
 		"locationId":               locationID,

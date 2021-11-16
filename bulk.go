@@ -99,7 +99,7 @@ func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(id null.String) (st
 		return "", fmt.Errorf("Bulk operation ID doesn't match, got=%v, want=%v", q.ID, id)
 	}
 
-	q, err = s.WaitForCurrentBulkQuery(1 * time.Second)
+	q, _ = s.WaitForCurrentBulkQuery(1 * time.Second)
 	if q.Status != "COMPLETED" {
 		return "", fmt.Errorf("Bulk operation didn't complete, status=%s, error_code=%s", q.Status, q.ErrorCode)
 	}
@@ -139,10 +139,10 @@ func (s *BulkOperationServiceOp) WaitForCurrentBulkQuery(interval time.Duration)
 	return q, nil
 }
 
-func (s *BulkOperationServiceOp) CancelRunningBulkQuery() (err error) {
+func (s *BulkOperationServiceOp) CancelRunningBulkQuery() error {
 	q, err := s.GetCurrentBulkQuery()
 	if err != nil {
-		return
+		return err
 	}
 
 	if q.Status == "CREATED" || q.Status == "RUNNING" {
@@ -164,19 +164,19 @@ func (s *BulkOperationServiceOp) CancelRunningBulkQuery() (err error) {
 
 		q, err = s.GetCurrentBulkQuery()
 		if err != nil {
-			return
+			return err
 		}
 		for q.Status == "CREATED" || q.Status == "RUNNING" || q.Status == "CANCELING" {
 			log.Tracef("Bulk operation still %s...", q.Status)
 			q, err = s.GetCurrentBulkQuery()
 			if err != nil {
-				return
+				return err
 			}
 		}
 		log.Debugln("Bulk operation cancelled")
 	}
 
-	return
+	return nil
 }
 
 func (s *BulkOperationServiceOp) BulkQuery(query string, out interface{}) error {

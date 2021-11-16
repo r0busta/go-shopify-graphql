@@ -11,19 +11,19 @@ import (
 )
 
 type ProductService interface {
-	List(query string) ([]*model.Product, error)
-	ListAll() ([]*model.Product, error)
+	List(query string) ([]model.Product, error)
+	ListAll() ([]model.Product, error)
 
 	Get(gid graphql.ID) (*model.Product, error)
 
-	Create(product *model.ProductInput, media []*model.CreateMediaInput) (string, error)
-	CreateBulk(products []*ProductCreate) error
+	Create(product model.ProductInput, media []model.CreateMediaInput) (string, error)
+	CreateBulk(products []ProductCreate) error
 
-	Update(product *model.ProductInput) error
-	UpdateBulk(products []*model.ProductInput) error
+	Update(product model.ProductInput) error
+	UpdateBulk(products []model.ProductInput) error
 
-	Delete(product *model.ProductDeleteInput) error
-	DeleteBulk(products []*model.ProductDeleteInput) error
+	Delete(product model.ProductDeleteInput) error
+	DeleteBulk(products []model.ProductDeleteInput) error
 }
 
 type ProductServiceOp struct {
@@ -31,8 +31,8 @@ type ProductServiceOp struct {
 }
 
 type ProductCreate struct {
-	ProductInput *model.ProductInput
-	MediaInput   []*model.CreateMediaInput
+	ProductInput model.ProductInput
+	MediaInput   []model.CreateMediaInput
 }
 
 type mutationProductCreate struct {
@@ -143,7 +143,7 @@ var productBulkQuery = fmt.Sprintf(`
 	}
 `, productBaseQuery)
 
-func (s *ProductServiceOp) ListAll() ([]*model.Product, error) {
+func (s *ProductServiceOp) ListAll() ([]model.Product, error) {
 	q := fmt.Sprintf(`
 		{
 			products{
@@ -156,16 +156,16 @@ func (s *ProductServiceOp) ListAll() ([]*model.Product, error) {
 		}
 	`, productBulkQuery)
 
-	res := []*model.Product{}
+	res := []model.Product{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []*model.Product{}, err
+		return []model.Product{}, err
 	}
 
 	return res, nil
 }
 
-func (s *ProductServiceOp) List(query string) ([]*model.Product, error) {
+func (s *ProductServiceOp) List(query string) ([]model.Product, error) {
 	q := fmt.Sprintf(`
 		{
 			products(query: "$query"){
@@ -180,10 +180,10 @@ func (s *ProductServiceOp) List(query string) ([]*model.Product, error) {
 
 	q = strings.ReplaceAll(q, "$query", query)
 
-	res := []*model.Product{}
+	res := []model.Product{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []*model.Product{}, err
+		return []model.Product{}, err
 	}
 
 	return res, nil
@@ -237,7 +237,7 @@ func (s *ProductServiceOp) getPage(id graphql.ID, cursor string) (*model.Product
 	return out.Product, nil
 }
 
-func (s *ProductServiceOp) CreateBulk(products []*ProductCreate) error {
+func (s *ProductServiceOp) CreateBulk(products []ProductCreate) error {
 	for _, p := range products {
 		_, err := s.Create(p.ProductInput, p.MediaInput)
 		if err != nil {
@@ -248,7 +248,7 @@ func (s *ProductServiceOp) CreateBulk(products []*ProductCreate) error {
 	return nil
 }
 
-func (s *ProductServiceOp) Create(product *model.ProductInput, media []*model.CreateMediaInput) (string, error) {
+func (s *ProductServiceOp) Create(product model.ProductInput, media []model.CreateMediaInput) (string, error) {
 	m := mutationProductCreate{}
 
 	vars := map[string]interface{}{
@@ -268,7 +268,7 @@ func (s *ProductServiceOp) Create(product *model.ProductInput, media []*model.Cr
 	return m.ProductCreateResult.PriceRule.ID.String, nil
 }
 
-func (s *ProductServiceOp) UpdateBulk(products []*model.ProductInput) error {
+func (s *ProductServiceOp) UpdateBulk(products []model.ProductInput) error {
 	for _, p := range products {
 		err := s.Update(p)
 		if err != nil {
@@ -279,7 +279,7 @@ func (s *ProductServiceOp) UpdateBulk(products []*model.ProductInput) error {
 	return nil
 }
 
-func (s *ProductServiceOp) Update(product *model.ProductInput) error {
+func (s *ProductServiceOp) Update(product model.ProductInput) error {
 	m := mutationProductUpdate{}
 
 	vars := map[string]interface{}{
@@ -297,7 +297,7 @@ func (s *ProductServiceOp) Update(product *model.ProductInput) error {
 	return nil
 }
 
-func (s *ProductServiceOp) DeleteBulk(products []*model.ProductDeleteInput) error {
+func (s *ProductServiceOp) DeleteBulk(products []model.ProductDeleteInput) error {
 	for _, p := range products {
 		err := s.Delete(p)
 		if err != nil {
@@ -308,7 +308,7 @@ func (s *ProductServiceOp) DeleteBulk(products []*model.ProductDeleteInput) erro
 	return nil
 }
 
-func (s *ProductServiceOp) Delete(product *model.ProductDeleteInput) error {
+func (s *ProductServiceOp) Delete(product model.ProductDeleteInput) error {
 	m := mutationProductDelete{}
 
 	vars := map[string]interface{}{

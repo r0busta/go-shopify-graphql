@@ -8,17 +8,16 @@ import (
 )
 
 func CloseFile(f *os.File) {
-	err := f.Close()
-	if err != nil {
+	if err := f.Close(); err != nil {
 		panic(err)
 	}
 }
 
-func ReadFile(file string) (data string, err error) {
+func ReadFile(file string) (string, error) {
 	var bytes []byte
-	bytes, err = ioutil.ReadFile(file)
-	data = string(bytes)
-	return
+	bytes, err := ioutil.ReadFile(file)
+	data := string(bytes)
+	return data, err
 }
 
 func DownloadFile(filepath string, url string) error {

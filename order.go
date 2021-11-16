@@ -12,14 +12,14 @@ import (
 type OrderService interface {
 	Get(id graphql.ID) (*model.Order, error)
 
-	List(opts ListOptions) ([]*model.Order, error)
-	ListAll() ([]*model.Order, error)
+	List(opts ListOptions) ([]model.Order, error)
+	ListAll() ([]model.Order, error)
 
-	ListAfterCursor(opts ListOptions) ([]*model.Order, string, string, error)
+	ListAfterCursor(opts ListOptions) ([]model.Order, string, string, error)
 
-	Update(input *model.OrderInput) error
+	Update(input model.OrderInput) error
 
-	GetFulfillmentOrdersAtLocation(orderID graphql.ID, locationID graphql.ID) ([]*model.FulfillmentOrder, error)
+	GetFulfillmentOrdersAtLocation(orderID graphql.ID, locationID graphql.ID) ([]model.FulfillmentOrder, error)
 }
 
 type OrderServiceOp struct {
@@ -270,7 +270,7 @@ func (s *OrderServiceOp) Get(id graphql.ID) (*model.Order, error) {
 	return out.Order, nil
 }
 
-func (s *OrderServiceOp) List(opts ListOptions) ([]*model.Order, error) {
+func (s *OrderServiceOp) List(opts ListOptions) ([]model.Order, error) {
 	q := fmt.Sprintf(`
 		{
 			orders(query: "$query"){
@@ -294,16 +294,16 @@ func (s *OrderServiceOp) List(opts ListOptions) ([]*model.Order, error) {
 
 	q = strings.ReplaceAll(q, "$query", opts.Query)
 
-	res := []*model.Order{}
+	res := []model.Order{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []*model.Order{}, err
+		return []model.Order{}, err
 	}
 
 	return res, nil
 }
 
-func (s *OrderServiceOp) ListAll() ([]*model.Order, error) {
+func (s *OrderServiceOp) ListAll() ([]model.Order, error) {
 	q := fmt.Sprintf(`
 		{
 			orders(query: "$query"){
@@ -325,16 +325,16 @@ func (s *OrderServiceOp) ListAll() ([]*model.Order, error) {
 		%s
 	`, orderBaseQuery, lineItemFragment)
 
-	res := []*model.Order{}
+	res := []model.Order{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []*model.Order{}, err
+		return []model.Order{}, err
 	}
 
 	return res, nil
 }
 
-func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]*model.Order, string, string, error) {
+func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]model.Order, string, string, error) {
 	q := fmt.Sprintf(`
 		query orders($query: String, $first: Int, $last: Int, $before: String, $after: String, $reverse: Boolean) {
 			orders(query: $query, first: $first, last: $last, before: $before, after: $after, reverse: $reverse){
@@ -394,21 +394,21 @@ func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]*model.Order, stri
 		return nil, "", "", err
 	}
 
-	res := []*model.Order{}
+	res := []model.Order{}
 	firstCursor := ""
 	lastCursor := ""
 	if len(out.Orders.Edges) > 0 {
 		firstCursor = out.Orders.Edges[0].Cursor
 		lastCursor = out.Orders.Edges[len(out.Orders.Edges)-1].Cursor
 		for _, o := range out.Orders.Edges {
-			res = append(res, o.OrderQueryResult)
+			res = append(res, *o.OrderQueryResult)
 		}
 	}
 
 	return res, firstCursor, lastCursor, nil
 }
 
-func (s *OrderServiceOp) Update(input *model.OrderInput) error {
+func (s *OrderServiceOp) Update(input model.OrderInput) error {
 	m := mutationOrderUpdate{}
 
 	vars := map[string]interface{}{
@@ -426,7 +426,7 @@ func (s *OrderServiceOp) Update(input *model.OrderInput) error {
 	return nil
 }
 
-func (s *OrderServiceOp) GetFulfillmentOrdersAtLocation(orderID graphql.ID, locationID graphql.ID) ([]*model.FulfillmentOrder, error) {
+func (s *OrderServiceOp) GetFulfillmentOrdersAtLocation(orderID graphql.ID, locationID graphql.ID) ([]model.FulfillmentOrder, error) {
 	q := `
 	{
 		order(id:"$id"){
@@ -454,10 +454,10 @@ func (s *OrderServiceOp) GetFulfillmentOrdersAtLocation(orderID graphql.ID, loca
 
 	q = strings.ReplaceAll(q, "$id", orderID.(string))
 	q = strings.ReplaceAll(q, "$query", fmt.Sprintf(`assigned_location_id:%s`, locationID.(string)))
-	res := []*model.FulfillmentOrder{}
+	res := []model.FulfillmentOrder{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []*model.FulfillmentOrder{}, err
+		return []model.FulfillmentOrder{}, err
 	}
 
 	return res, nil

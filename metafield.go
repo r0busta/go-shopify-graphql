@@ -10,23 +10,24 @@ import (
 )
 
 type MetafieldService interface {
-	ListAllShopMetafields() ([]*model.Metafield, error)
-	ListShopMetafieldsByNamespace(namespace string) ([]*model.Metafield, error)
+	ListAllShopMetafields() ([]model.Metafield, error)
+	ListShopMetafieldsByNamespace(namespace string) ([]model.Metafield, error)
 
 	GetShopMetafieldByKey(namespace, key string) (model.Metafield, error)
 
-	Delete(metafield *model.MetafieldDeleteInput) error
-	DeleteBulk(metafield []*model.MetafieldDeleteInput) error
+	Delete(metafield model.MetafieldDeleteInput) error
+	DeleteBulk(metafield []model.MetafieldDeleteInput) error
 }
 
 type MetafieldServiceOp struct {
 	client *Client
 }
+
 type mutationMetafieldDelete struct {
 	MetafieldDeleteResult model.MetafieldDeletePayload `graphql:"metafieldDelete(input: $input)" json:"metafieldDelete"`
 }
 
-func (s *MetafieldServiceOp) ListAllShopMetafields() ([]*model.Metafield, error) {
+func (s *MetafieldServiceOp) ListAllShopMetafields() ([]model.Metafield, error) {
 	q := `
 		{
 			shop{
@@ -50,16 +51,16 @@ func (s *MetafieldServiceOp) ListAllShopMetafields() ([]*model.Metafield, error)
 		}
 `
 
-	res := []*model.Metafield{}
+	res := []model.Metafield{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []*model.Metafield{}, err
+		return []model.Metafield{}, err
 	}
 
 	return res, nil
 }
 
-func (s *MetafieldServiceOp) ListShopMetafieldsByNamespace(namespace string) ([]*model.Metafield, error) {
+func (s *MetafieldServiceOp) ListShopMetafieldsByNamespace(namespace string) ([]model.Metafield, error) {
 	q := `
 		{
 			shop{
@@ -84,10 +85,10 @@ func (s *MetafieldServiceOp) ListShopMetafieldsByNamespace(namespace string) ([]
 `
 	q = strings.ReplaceAll(q, "$namespace", namespace)
 
-	res := []*model.Metafield{}
+	res := []model.Metafield{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []*model.Metafield{}, err
+		return []model.Metafield{}, err
 	}
 
 	return res, nil
@@ -112,7 +113,7 @@ func (s *MetafieldServiceOp) GetShopMetafieldByKey(namespace, key string) (model
 	return q.Shop.Metafield, nil
 }
 
-func (s *MetafieldServiceOp) DeleteBulk(metafields []*model.MetafieldDeleteInput) error {
+func (s *MetafieldServiceOp) DeleteBulk(metafields []model.MetafieldDeleteInput) error {
 	for _, m := range metafields {
 		err := s.Delete(m)
 		if err != nil {
@@ -123,7 +124,7 @@ func (s *MetafieldServiceOp) DeleteBulk(metafields []*model.MetafieldDeleteInput
 	return nil
 }
 
-func (s *MetafieldServiceOp) Delete(metafield *model.MetafieldDeleteInput) error {
+func (s *MetafieldServiceOp) Delete(metafield model.MetafieldDeleteInput) error {
 	m := mutationMetafieldDelete{}
 
 	vars := map[string]interface{}{

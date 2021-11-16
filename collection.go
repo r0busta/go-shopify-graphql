@@ -10,14 +10,14 @@ import (
 )
 
 type CollectionService interface {
-	ListAll() ([]*model.Collection, error)
+	ListAll() ([]model.Collection, error)
 
 	Get(id graphql.ID) (*model.Collection, error)
 
-	Create(collection *model.CollectionInput) (string, error)
-	CreateBulk(collections []*model.CollectionInput) error
+	Create(collection model.CollectionInput) (string, error)
+	CreateBulk(collections []model.CollectionInput) error
 
-	Update(collection *model.CollectionInput) error
+	Update(collection model.CollectionInput) error
 }
 
 type CollectionServiceOp struct {
@@ -56,7 +56,7 @@ var collectionBulkQuery = `
 	title
 `
 
-func (s *CollectionServiceOp) ListAll() ([]*model.Collection, error) {
+func (s *CollectionServiceOp) ListAll() ([]model.Collection, error) {
 	q := fmt.Sprintf(`
 		{
 			collections{
@@ -69,10 +69,10 @@ func (s *CollectionServiceOp) ListAll() ([]*model.Collection, error) {
 		}
 	`, collectionBulkQuery)
 
-	res := []*model.Collection{}
+	res := []model.Collection{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []*model.Collection{}, err
+		return []model.Collection{}, err
 	}
 
 	return res, nil
@@ -126,7 +126,7 @@ func (s *CollectionServiceOp) getPage(id graphql.ID, cursor string) (*model.Coll
 	return out.Collection, nil
 }
 
-func (s *CollectionServiceOp) CreateBulk(collections []*model.CollectionInput) error {
+func (s *CollectionServiceOp) CreateBulk(collections []model.CollectionInput) error {
 	for _, c := range collections {
 		_, err := s.client.Collection.Create(c)
 		if err != nil {
@@ -137,7 +137,7 @@ func (s *CollectionServiceOp) CreateBulk(collections []*model.CollectionInput) e
 	return nil
 }
 
-func (s *CollectionServiceOp) Create(collection *model.CollectionInput) (string, error) {
+func (s *CollectionServiceOp) Create(collection model.CollectionInput) (string, error) {
 	m := mutationCollectionCreate{}
 
 	vars := map[string]interface{}{
@@ -155,7 +155,7 @@ func (s *CollectionServiceOp) Create(collection *model.CollectionInput) (string,
 	return m.CollectionCreateResult.Collection.ID.String, nil
 }
 
-func (s *CollectionServiceOp) Update(collection *model.CollectionInput) error {
+func (s *CollectionServiceOp) Update(collection model.CollectionInput) error {
 	m := mutationCollectionUpdate{}
 
 	vars := map[string]interface{}{
