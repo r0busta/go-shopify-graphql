@@ -14,8 +14,8 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/r0busta/go-shopify-graphql-model/graph/model"
-	"github.com/r0busta/go-shopify-graphql/v3/rand"
-	"github.com/r0busta/go-shopify-graphql/v3/utils"
+	"github.com/r0busta/go-shopify-graphql/v4/rand"
+	"github.com/r0busta/go-shopify-graphql/v4/utils"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/guregu/null.v4"
 )
