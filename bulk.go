@@ -1,5 +1,3 @@
-//go:generate mockgen -package shopify -destination bulk_mock.go -source bulk.go
-
 package shopify
 
 import (

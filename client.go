@@ -57,8 +57,7 @@ func NewDefaultClient() (shopClient *Client) {
 func NewClient(apiKey string, password string, storeName string) *Client {
 	c := &Client{gql: newShopifyGraphQLClient(apiKey, password, storeName)}
 
-	bulkOperationService := &BulkOperationServiceOp{client: c}
-	c.BulkOperation = bulkOperationService
+	c.BulkOperation = &BulkOperationServiceOp{client: c}
 
 	c.Product = &ProductServiceOp{client: c}
 	c.Variant = &VariantServiceOp{client: c}
@@ -68,7 +67,7 @@ func NewClient(apiKey string, password string, storeName string) *Client {
 	c.Fulfillment = &FulfillmentServiceOp{client: c}
 	c.Location = &LocationServiceOp{client: c}
 	c.Metafield = &MetafieldServiceOp{client: c}
-	c.PriceList = &PriceListServiceOp{bulkOperationService}
+	c.PriceList = &PriceListServiceOp{c.BulkOperation, c.gql}
 
 	return c
 }
