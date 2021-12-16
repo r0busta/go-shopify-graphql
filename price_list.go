@@ -73,8 +73,8 @@ type PriceListPriceInput struct {
 }
 
 type priceListPriceOutput struct {
-	CompareAtPrice model.MoneyInput `json:"compareAtPrice"`
-	Price          model.MoneyInput `json:"price"`
+	CompareAtPrice model.MoneyV2 `json:"compareAtPrice"`
+	Price          model.MoneyV2 `json:"price"`
 	// Commented because I'm not sure why this causes a deadlock on the query generator, and we don't need it now...
 	// Variant model.ProductVariant `json:"variant"`
 }
