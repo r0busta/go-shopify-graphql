@@ -3,26 +3,32 @@ package shopify
 import (
 	"os"
 
-	graphqlclient "github.com/r0busta/go-shopify-graphql/v4/graphql"
 	"github.com/r0busta/graphql"
 	log "github.com/sirupsen/logrus"
+	graphqlclient "github.com/xiatechs/go-shopify-graphql/v4/graphql"
 )
 
 const (
-	shopifyAPIVersion = "2021-01"
+	// TODO:
+	//  I've had to bump this to 2021-04 (from 2021-01 which is what upstream supports) to support price lists
+	//  I wonder if we should disabled all of the remaining functionality (besides price lists) that we don't know if it works with the new API version?
+	//  There's also pretty much no coverage for all of the upstream functionality...
+	shopifyAPIVersion = "2021-04"
 )
 
 type Client struct {
 	gql *graphql.Client
 
-	Product       ProductService
-	Variant       VariantService
-	Inventory     InventoryService
-	Collection    CollectionService
-	Order         OrderService
-	Fulfillment   FulfillmentService
-	Location      LocationService
-	Metafield     MetafieldService
+	Product     ProductService
+	Variant     VariantService
+	Inventory   InventoryService
+	Collection  CollectionService
+	Order       OrderService
+	Fulfillment FulfillmentService
+	Location    LocationService
+	Metafield   MetafieldService
+	PriceList   PriceListService
+
 	BulkOperation BulkOperationService
 }
 
@@ -51,6 +57,9 @@ func NewDefaultClient() (shopClient *Client) {
 func NewClient(apiKey string, password string, storeName string) *Client {
 	c := &Client{gql: newShopifyGraphQLClient(apiKey, password, storeName)}
 
+	bulkOperationService := &BulkOperationServiceOp{client: c}
+	c.BulkOperation = bulkOperationService
+
 	c.Product = &ProductServiceOp{client: c}
 	c.Variant = &VariantServiceOp{client: c}
 	c.Inventory = &InventoryServiceOp{client: c}
@@ -59,7 +68,7 @@ func NewClient(apiKey string, password string, storeName string) *Client {
 	c.Fulfillment = &FulfillmentServiceOp{client: c}
 	c.Location = &LocationServiceOp{client: c}
 	c.Metafield = &MetafieldServiceOp{client: c}
-	c.BulkOperation = &BulkOperationServiceOp{client: c}
+	c.PriceList = &PriceListServiceOp{bulkOperationService}
 
 	return c
 }

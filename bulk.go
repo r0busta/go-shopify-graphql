@@ -1,3 +1,5 @@
+//go:generate mockgen -package shopify -destination bulk_mock.go -source bulk.go
+
 package shopify
 
 import (
@@ -14,9 +16,9 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/r0busta/go-shopify-graphql-model/graph/model"
-	"github.com/r0busta/go-shopify-graphql/v4/rand"
-	"github.com/r0busta/go-shopify-graphql/v4/utils"
 	log "github.com/sirupsen/logrus"
+	"github.com/xiatechs/go-shopify-graphql/v4/rand"
+	"github.com/xiatechs/go-shopify-graphql/v4/utils"
 	"gopkg.in/guregu/null.v4"
 )
 
