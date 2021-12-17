@@ -19,7 +19,7 @@ type PriceList struct {
 // PriceListService defines the price list service operations.
 type PriceListService interface {
 	GetAll(ctx context.Context) ([]PriceList, error)
-	AddFixedPrice(ctx context.Context, priceListID string, prices []PriceListPriceInput) error
+	AddFixedPrices(ctx context.Context, priceListID string, prices []PriceListPriceInput) error
 }
 
 // PriceListBulkQueryClient defines the required bulk query client operations.
@@ -88,8 +88,8 @@ type mutationPriceListFixedPricesAdd struct {
 	PriceListFixedPricesAddResult priceListFixedPricesAddResult `graphql:"priceListFixedPricesAdd(priceListId: $priceListId, prices: $prices)" json:"priceListFixedPricesAdd"`
 }
 
-// AddFixedPrice adds a fixed price to a price list based on the arguments received.
-func (s *PriceListServiceOp) AddFixedPrice(ctx context.Context, priceListID string, prices []PriceListPriceInput) error {
+// AddFixedPrices adds a fixed prices to a price list based on the arguments received.
+func (s *PriceListServiceOp) AddFixedPrices(ctx context.Context, priceListID string, prices []PriceListPriceInput) error {
 	m := mutationPriceListFixedPricesAdd{}
 
 	vars := map[string]interface{}{

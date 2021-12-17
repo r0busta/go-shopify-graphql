@@ -78,7 +78,7 @@ func TestPriceListServiceOp_AddFixedPrice(t *testing.T) {
 
 		priceListService := PriceListServiceOp{mutationClient: mockPriceListMutationClient}
 
-		err := priceListService.AddFixedPrice(ctx, "", nil)
+		err := priceListService.AddFixedPrices(ctx, "", nil)
 		assert.Error(t, err)
 	})
 
@@ -127,7 +127,7 @@ func TestPriceListServiceOp_AddFixedPrice(t *testing.T) {
 
 		priceListService := PriceListServiceOp{mutationClient: mockPriceListMutationClient}
 
-		err := priceListService.AddFixedPrice(ctx, priceListID, prices)
+		err := priceListService.AddFixedPrices(ctx, priceListID, prices)
 		assert.NoError(t, err)
 	})
 }
