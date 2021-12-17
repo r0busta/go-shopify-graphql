@@ -27,7 +27,7 @@ func TestPriceListServiceOp_GetAll(t *testing.T) {
 
 		priceListService := PriceListServiceOp{bulkQueryClient: mockPriceListBulkQueryClient}
 
-		_, err := priceListService.GetAll(context.Background())
+		_, err := priceListService.GetPriceLists(context.Background())
 		assert.Error(t, err)
 	})
 
@@ -53,7 +53,7 @@ func TestPriceListServiceOp_GetAll(t *testing.T) {
 
 		priceListService := PriceListServiceOp{bulkQueryClient: mockPriceListBulkQueryClient}
 
-		priceLists, err := priceListService.GetAll(context.Background())
+		priceLists, err := priceListService.GetPriceLists(context.Background())
 		require.NoError(t, err)
 
 		assert.Equal(t, expectedPriceLists, priceLists)
@@ -78,7 +78,7 @@ func TestPriceListServiceOp_AddFixedPrice(t *testing.T) {
 
 		priceListService := PriceListServiceOp{mutationClient: mockPriceListMutationClient}
 
-		err := priceListService.AddFixedPrices(ctx, "", nil)
+		err := priceListService.AddFixedPricesToPriceList(ctx, "", nil)
 		assert.Error(t, err)
 	})
 
@@ -127,7 +127,7 @@ func TestPriceListServiceOp_AddFixedPrice(t *testing.T) {
 
 		priceListService := PriceListServiceOp{mutationClient: mockPriceListMutationClient}
 
-		err := priceListService.AddFixedPrices(ctx, priceListID, prices)
+		err := priceListService.AddFixedPricesToPriceList(ctx, priceListID, prices)
 		assert.NoError(t, err)
 	})
 }

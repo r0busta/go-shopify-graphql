@@ -18,8 +18,8 @@ type PriceList struct {
 
 // PriceListService defines the price list service operations.
 type PriceListService interface {
-	GetAll(ctx context.Context) ([]PriceList, error)
-	AddFixedPrices(ctx context.Context, priceListID string, prices []PriceListPriceInput) error
+	GetPriceLists(ctx context.Context) ([]PriceList, error)
+	AddFixedPricesToPriceList(ctx context.Context, priceListID string, prices []PriceListPriceInput) error
 }
 
 // PriceListBulkQueryClient defines the required bulk query client operations.
@@ -54,8 +54,8 @@ const (
 	`
 )
 
-// GetAll returns all price lists for the store.
-func (s *PriceListServiceOp) GetAll(_ context.Context) ([]PriceList, error) {
+// GetPriceLists returns all price lists for the store.
+func (s *PriceListServiceOp) GetPriceLists(_ context.Context) ([]PriceList, error) {
 	var res []PriceList
 	err := s.bulkQueryClient.BulkQuery(priceListsGetAllBulkQuery, &res)
 	if err != nil {
@@ -88,8 +88,8 @@ type mutationPriceListFixedPricesAdd struct {
 	PriceListFixedPricesAddResult priceListFixedPricesAddResult `graphql:"priceListFixedPricesAdd(priceListId: $priceListId, prices: $prices)" json:"priceListFixedPricesAdd"`
 }
 
-// AddFixedPrices adds a fixed prices to a price list based on the arguments received.
-func (s *PriceListServiceOp) AddFixedPrices(ctx context.Context, priceListID string, prices []PriceListPriceInput) error {
+// AddFixedPricesToPriceList adds fixed prices to a price list based on the arguments received.
+func (s *PriceListServiceOp) AddFixedPricesToPriceList(ctx context.Context, priceListID string, prices []PriceListPriceInput) error {
 	m := mutationPriceListFixedPricesAdd{}
 
 	vars := map[string]interface{}{
