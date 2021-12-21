@@ -3,7 +3,7 @@ package shopify
 import (
 	"os"
 
-	graphqlclient "github.com/r0busta/go-shopify-graphql/v4/graphql"
+	graphqlclient "github.com/r0busta/go-shopify-graphql/v5/graphql"
 	"github.com/r0busta/graphql"
 	log "github.com/sirupsen/logrus"
 )
