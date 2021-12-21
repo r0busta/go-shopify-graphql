@@ -7,7 +7,6 @@ import (
 
 	"github.com/r0busta/go-shopify-graphql-model/graph/model"
 	"github.com/r0busta/graphql"
-	log "github.com/sirupsen/logrus"
 )
 
 type ProductService interface {
@@ -17,22 +16,14 @@ type ProductService interface {
 	Get(gid graphql.ID) (*model.Product, error)
 
 	Create(product model.ProductInput, media []model.CreateMediaInput) (string, error)
-	CreateBulk(products []ProductCreate) error
 
 	Update(product model.ProductInput) error
-	UpdateBulk(products []model.ProductInput) error
 
 	Delete(product model.ProductDeleteInput) error
-	DeleteBulk(products []model.ProductDeleteInput) error
 }
 
 type ProductServiceOp struct {
 	client *Client
-}
-
-type ProductCreate struct {
-	ProductInput model.ProductInput
-	MediaInput   []model.CreateMediaInput
 }
 
 type mutationProductCreate struct {
@@ -237,17 +228,6 @@ func (s *ProductServiceOp) getPage(id graphql.ID, cursor string) (*model.Product
 	return out.Product, nil
 }
 
-func (s *ProductServiceOp) CreateBulk(products []ProductCreate) error {
-	for _, p := range products {
-		_, err := s.Create(p.ProductInput, p.MediaInput)
-		if err != nil {
-			log.Warnf("Couldn't create product (%v): %s", p, err)
-		}
-	}
-
-	return nil
-}
-
 func (s *ProductServiceOp) Create(product model.ProductInput, media []model.CreateMediaInput) (string, error) {
 	m := mutationProductCreate{}
 
@@ -268,17 +248,6 @@ func (s *ProductServiceOp) Create(product model.ProductInput, media []model.Crea
 	return m.ProductCreateResult.PriceRule.ID.String, nil
 }
 
-func (s *ProductServiceOp) UpdateBulk(products []model.ProductInput) error {
-	for _, p := range products {
-		err := s.Update(p)
-		if err != nil {
-			log.Warnf("Couldn't update product (%v): %s", p, err)
-		}
-	}
-
-	return nil
-}
-
 func (s *ProductServiceOp) Update(product model.ProductInput) error {
 	m := mutationProductUpdate{}
 
@@ -292,17 +261,6 @@ func (s *ProductServiceOp) Update(product model.ProductInput) error {
 
 	if len(m.ProductUpdateResult.UserErrors) > 0 {
 		return fmt.Errorf("%+v", m.ProductUpdateResult.UserErrors)
-	}
-
-	return nil
-}
-
-func (s *ProductServiceOp) DeleteBulk(products []model.ProductDeleteInput) error {
-	for _, p := range products {
-		err := s.Delete(p)
-		if err != nil {
-			log.Warnf("Couldn't delete product (%v): %s", p, err)
-		}
 	}
 
 	return nil
