@@ -28,7 +28,7 @@ type ProductServiceOp struct {
 }
 
 type mutationProductCreate struct {
-	ProductCreateResult model.PriceRuleCreatePayload `graphql:"productCreate(input: $input, media: $media)" json:"productCreate"`
+	ProductCreateResult model.ProductCreatePayload `graphql:"productCreate(input: $input, media: $media)" json:"productCreate"`
 }
 
 type mutationProductUpdate struct {
@@ -246,7 +246,7 @@ func (s *ProductServiceOp) Create(product model.ProductInput, media []model.Crea
 		return "", fmt.Errorf("%+v", m.ProductCreateResult.UserErrors)
 	}
 
-	return m.ProductCreateResult.PriceRule.ID.String, nil
+	return m.ProductCreateResult.Product.ID.ValueOrZero(), nil
 }
 
 func (s *ProductServiceOp) Update(product model.ProductInput) error {
