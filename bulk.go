@@ -25,6 +25,7 @@ const (
 	nodeFieldName  = "Node"
 )
 
+//go:generate mockgen -destination=./mock/bulk_service.go -package=mock . BulkOperationService
 type BulkOperationService interface {
 	BulkQuery(query string, v interface{}) error
 

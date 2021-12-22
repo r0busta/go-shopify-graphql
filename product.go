@@ -9,6 +9,7 @@ import (
 	"github.com/r0busta/graphql"
 )
 
+//go:generate mockgen -destination=./mock/product_service.go -package=mock . ProductService
 type ProductService interface {
 	List(query string) ([]model.Product, error)
 	ListAll() ([]model.Product, error)

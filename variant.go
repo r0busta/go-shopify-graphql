@@ -7,6 +7,7 @@ import (
 	"github.com/r0busta/go-shopify-graphql-model/graph/model"
 )
 
+//go:generate mockgen -destination=./mock/variant_service.go -package=mock . VariantService
 type VariantService interface {
 	Update(variant model.ProductVariantInput) error
 }

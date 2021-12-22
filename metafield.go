@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+//go:generate mockgen -destination=./mock/metafield_service.go -package=mock . MetafieldService
 type MetafieldService interface {
 	ListAllShopMetafields() ([]model.Metafield, error)
 	ListShopMetafieldsByNamespace(namespace string) ([]model.Metafield, error)

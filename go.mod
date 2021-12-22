@@ -3,6 +3,7 @@ module github.com/r0busta/go-shopify-graphql/v5
 go 1.17
 
 require (
+	github.com/golang/mock v1.6.0
 	github.com/json-iterator/go v1.1.12
 	github.com/r0busta/go-shopify-graphql-model v0.0.4
 	github.com/r0busta/graphql v1.0.0

@@ -9,6 +9,7 @@ import (
 	"github.com/r0busta/graphql"
 )
 
+//go:generate mockgen -destination=./mock/order_service.go -package=mock . OrderService
 type OrderService interface {
 	Get(id graphql.ID) (*model.Order, error)
 

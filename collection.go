@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+//go:generate mockgen -destination=./mock/collection_service.go -package=mock . CollectionService
 type CollectionService interface {
 	ListAll() ([]model.Collection, error)
 

@@ -7,6 +7,7 @@ import (
 	"github.com/r0busta/graphql"
 )
 
+//go:generate mockgen -destination=./mock/location_service.go -package=mock . LocationService
 type LocationService interface {
 	Get(id graphql.ID) (*model.Location, error)
 }

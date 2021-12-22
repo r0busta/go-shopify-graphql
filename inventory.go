@@ -8,6 +8,7 @@ import (
 	"github.com/r0busta/graphql"
 )
 
+//go:generate mockgen -destination=./mock/inventory_service.go -package=mock . InventoryService
 type InventoryService interface {
 	Update(id graphql.ID, input model.InventoryItemUpdateInput) error
 	Adjust(locationID graphql.ID, input []model.InventoryAdjustItemInput) error

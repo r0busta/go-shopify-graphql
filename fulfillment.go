@@ -7,6 +7,7 @@ import (
 	"github.com/r0busta/go-shopify-graphql-model/graph/model"
 )
 
+//go:generate mockgen -destination=./mock/fulfillment_service.go -package=mock . FulfillmentService
 type FulfillmentService interface {
 	Create(input model.FulfillmentV2Input) error
 }
