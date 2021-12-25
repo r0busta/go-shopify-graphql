@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/r0busta/go-shopify-graphql-model/graph/model"
+	"github.com/r0busta/go-shopify-graphql-model/v2/graph/model"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -14,7 +14,7 @@ type MetafieldService interface {
 	ListAllShopMetafields() ([]model.Metafield, error)
 	ListShopMetafieldsByNamespace(namespace string) ([]model.Metafield, error)
 
-	GetShopMetafieldByKey(namespace, key string) (model.Metafield, error)
+	GetShopMetafieldByKey(namespace, key string) (*model.Metafield, error)
 
 	Delete(metafield model.MetafieldDeleteInput) error
 	DeleteBulk(metafield []model.MetafieldDeleteInput) error
@@ -24,8 +24,12 @@ type MetafieldServiceOp struct {
 	client *Client
 }
 
+var _ MetafieldService = &MetafieldServiceOp{}
+
 type mutationMetafieldDelete struct {
-	MetafieldDeleteResult model.MetafieldDeletePayload `graphql:"metafieldDelete(input: $input)" json:"metafieldDelete"`
+	MetafieldDeleteResult struct {
+		UserErrors []model.UserError `json:"userErrors,omitempty"`
+	} `graphql:"metafieldDelete(input: $input)" json:"metafieldDelete"`
 }
 
 func (s *MetafieldServiceOp) ListAllShopMetafields() ([]model.Metafield, error) {
@@ -44,7 +48,7 @@ func (s *MetafieldServiceOp) ListAllShopMetafields() ([]model.Metafield, error) 
 							ownerType
 							updatedAt
 							value
-							valueType
+							type
 						}
 					}
 				}	  
@@ -55,7 +59,7 @@ func (s *MetafieldServiceOp) ListAllShopMetafields() ([]model.Metafield, error) 
 	res := []model.Metafield{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []model.Metafield{}, err
+		return nil, fmt.Errorf("bulk query: %w", err)
 	}
 
 	return res, nil
@@ -77,7 +81,7 @@ func (s *MetafieldServiceOp) ListShopMetafieldsByNamespace(namespace string) ([]
 							ownerType
 							updatedAt
 							value
-							valueType
+							type
 						}
 					}
 				}	  
@@ -89,13 +93,13 @@ func (s *MetafieldServiceOp) ListShopMetafieldsByNamespace(namespace string) ([]
 	res := []model.Metafield{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []model.Metafield{}, err
+		return nil, fmt.Errorf("bulk query: %w", err)
 	}
 
 	return res, nil
 }
 
-func (s *MetafieldServiceOp) GetShopMetafieldByKey(namespace, key string) (model.Metafield, error) {
+func (s *MetafieldServiceOp) GetShopMetafieldByKey(namespace, key string) (*model.Metafield, error) {
 	var q struct {
 		Shop struct {
 			Metafield model.Metafield `graphql:"metafield(namespace: $namespace, key: $key)"`
@@ -108,10 +112,10 @@ func (s *MetafieldServiceOp) GetShopMetafieldByKey(namespace, key string) (model
 
 	err := s.client.gql.Query(context.Background(), &q, vars)
 	if err != nil {
-		return model.Metafield{}, err
+		return nil, fmt.Errorf("query: %w", err)
 	}
 
-	return q.Shop.Metafield, nil
+	return &q.Shop.Metafield, nil
 }
 
 func (s *MetafieldServiceOp) DeleteBulk(metafields []model.MetafieldDeleteInput) error {
@@ -133,7 +137,7 @@ func (s *MetafieldServiceOp) Delete(metafield model.MetafieldDeleteInput) error 
 	}
 	err := s.client.gql.Mutate(context.Background(), &m, vars)
 	if err != nil {
-		return err
+		return fmt.Errorf("mutation: %w", err)
 	}
 
 	if len(m.MetafieldDeleteResult.UserErrors) > 0 {

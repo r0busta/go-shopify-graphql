@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/r0busta/go-shopify-graphql-model/graph/model"
-	"github.com/r0busta/graphql"
+	"github.com/r0busta/go-shopify-graphql-model/v2/graph/model"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -13,9 +12,9 @@ import (
 type CollectionService interface {
 	ListAll() ([]model.Collection, error)
 
-	Get(id graphql.ID) (*model.Collection, error)
+	Get(id string) (*model.Collection, error)
 
-	Create(collection model.CollectionInput) (string, error)
+	Create(collection model.CollectionInput) (*string, error)
 	CreateBulk(collections []model.CollectionInput) error
 
 	Update(collection model.CollectionInput) error
@@ -25,12 +24,22 @@ type CollectionServiceOp struct {
 	client *Client
 }
 
+var _ CollectionService = &CollectionServiceOp{}
+
 type mutationCollectionCreate struct {
-	CollectionCreateResult model.CollectionCreatePayload `graphql:"collectionCreate(input: $input)" json:"collectionCreate"`
+	CollectionCreateResult struct {
+		Collection *struct {
+			ID string `json:"id,omitempty"`
+		} `json:"collection,omitempty"`
+
+		UserErrors []model.UserError `json:"userErrors,omitempty"`
+	} `graphql:"collectionCreate(input: $input)" json:"collectionCreate"`
 }
 
 type mutationCollectionUpdate struct {
-	CollectionCreateResult model.CollectionUpdatePayload `graphql:"collectionUpdate(input: $input)" json:"collectionUpdate"`
+	CollectionCreateResult struct {
+		UserErrors []model.UserError `json:"userErrors,omitempty"`
+	} `graphql:"collectionUpdate(input: $input)" json:"collectionUpdate"`
 }
 
 var collectionQuery = `
@@ -73,13 +82,13 @@ func (s *CollectionServiceOp) ListAll() ([]model.Collection, error) {
 	res := []model.Collection{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []model.Collection{}, err
+		return nil, fmt.Errorf("bulk query: %w", err)
 	}
 
 	return res, nil
 }
 
-func (s *CollectionServiceOp) Get(id graphql.ID) (*model.Collection, error) {
+func (s *CollectionServiceOp) Get(id string) (*model.Collection, error) {
 	out, err := s.getPage(id, "")
 	if err != nil {
 		return nil, err
@@ -89,7 +98,7 @@ func (s *CollectionServiceOp) Get(id graphql.ID) (*model.Collection, error) {
 	hasNextPage := out.Products.PageInfo.HasNextPage
 	for hasNextPage && len(nextPageData.Products.Edges) > 0 {
 		cursor := nextPageData.Products.Edges[len(nextPageData.Products.Edges)-1].Cursor
-		nextPageData, err := s.getPage(id, cursor.String)
+		nextPageData, err := s.getPage(id, cursor)
 		if err != nil {
 			return nil, err
 		}
@@ -100,7 +109,7 @@ func (s *CollectionServiceOp) Get(id graphql.ID) (*model.Collection, error) {
 	return out, nil
 }
 
-func (s *CollectionServiceOp) getPage(id graphql.ID, cursor string) (*model.Collection, error) {
+func (s *CollectionServiceOp) getPage(id string, cursor string) (*model.Collection, error) {
 	q := fmt.Sprintf(`
 		query collection($id: ID!, $cursor: String) {
 			collection(id: $id){
@@ -121,7 +130,7 @@ func (s *CollectionServiceOp) getPage(id graphql.ID, cursor string) (*model.Coll
 	}{}
 	err := s.client.gql.QueryString(context.Background(), q, vars, &out)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query: %w", err)
 	}
 
 	return out.Collection, nil
@@ -138,7 +147,7 @@ func (s *CollectionServiceOp) CreateBulk(collections []model.CollectionInput) er
 	return nil
 }
 
-func (s *CollectionServiceOp) Create(collection model.CollectionInput) (string, error) {
+func (s *CollectionServiceOp) Create(collection model.CollectionInput) (*string, error) {
 	m := mutationCollectionCreate{}
 
 	vars := map[string]interface{}{
@@ -146,14 +155,14 @@ func (s *CollectionServiceOp) Create(collection model.CollectionInput) (string, 
 	}
 	err := s.client.gql.Mutate(context.Background(), &m, vars)
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("mutation: %w", err)
 	}
 
 	if len(m.CollectionCreateResult.UserErrors) > 0 {
-		return "", fmt.Errorf("%+v", m.CollectionCreateResult.UserErrors)
+		return nil, fmt.Errorf("%+v", m.CollectionCreateResult.UserErrors)
 	}
 
-	return m.CollectionCreateResult.Collection.ID.String, nil
+	return &m.CollectionCreateResult.Collection.ID, nil
 }
 
 func (s *CollectionServiceOp) Update(collection model.CollectionInput) error {
@@ -164,7 +173,7 @@ func (s *CollectionServiceOp) Update(collection model.CollectionInput) error {
 	}
 	err := s.client.gql.Mutate(context.Background(), &m, vars)
 	if err != nil {
-		return err
+		return fmt.Errorf("mutation: %w", err)
 	}
 
 	if len(m.CollectionCreateResult.UserErrors) > 0 {

@@ -8,8 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/r0busta/go-shopify-graphql-model/graph/model"
-	graphql "github.com/r0busta/graphql"
+	model "github.com/r0busta/go-shopify-graphql-model/v2/graph/model"
 )
 
 // MockInventoryService is a mock of InventoryService interface.
@@ -36,7 +35,7 @@ func (m *MockInventoryService) EXPECT() *MockInventoryServiceMockRecorder {
 }
 
 // ActivateInventory mocks base method.
-func (m *MockInventoryService) ActivateInventory(arg0, arg1 graphql.ID) error {
+func (m *MockInventoryService) ActivateInventory(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ActivateInventory", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -50,7 +49,7 @@ func (mr *MockInventoryServiceMockRecorder) ActivateInventory(arg0, arg1 interfa
 }
 
 // Adjust mocks base method.
-func (m *MockInventoryService) Adjust(arg0 graphql.ID, arg1 []model.InventoryAdjustItemInput) error {
+func (m *MockInventoryService) Adjust(arg0 string, arg1 []model.InventoryAdjustItemInput) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Adjust", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -64,7 +63,7 @@ func (mr *MockInventoryServiceMockRecorder) Adjust(arg0, arg1 interface{}) *gomo
 }
 
 // Update mocks base method.
-func (m *MockInventoryService) Update(arg0 graphql.ID, arg1 model.InventoryItemUpdateInput) error {
+func (m *MockInventoryService) Update(arg0 string, arg1 model.InventoryItemUpdateInput) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", arg0, arg1)
 	ret0, _ := ret[0].(error)

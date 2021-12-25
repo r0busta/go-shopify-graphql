@@ -8,8 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/r0busta/go-shopify-graphql-model/graph/model"
-	graphql "github.com/r0busta/graphql"
+	model "github.com/r0busta/go-shopify-graphql-model/v2/graph/model"
 )
 
 // MockProductService is a mock of ProductService interface.
@@ -36,18 +35,18 @@ func (m *MockProductService) EXPECT() *MockProductServiceMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockProductService) Create(arg0 model.ProductInput, arg1 []model.CreateMediaInput) (string, error) {
+func (m *MockProductService) Create(arg0 model.ProductInput) (*string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", arg0, arg1)
-	ret0, _ := ret[0].(string)
+	ret := m.ctrl.Call(m, "Create", arg0)
+	ret0, _ := ret[0].(*string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockProductServiceMockRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockProductServiceMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockProductService)(nil).Create), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockProductService)(nil).Create), arg0)
 }
 
 // Delete mocks base method.
@@ -65,7 +64,7 @@ func (mr *MockProductServiceMockRecorder) Delete(arg0 interface{}) *gomock.Call 
 }
 
 // Get mocks base method.
-func (m *MockProductService) Get(arg0 graphql.ID) (*model.Product, error) {
+func (m *MockProductService) Get(arg0 string) (*model.Product, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0)
 	ret0, _ := ret[0].(*model.Product)
@@ -121,4 +120,32 @@ func (m *MockProductService) Update(arg0 model.ProductInput) error {
 func (mr *MockProductServiceMockRecorder) Update(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockProductService)(nil).Update), arg0)
+}
+
+// VariantsBulkCreate mocks base method.
+func (m *MockProductService) VariantsBulkCreate(arg0 string, arg1 []model.ProductVariantsBulkInput) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VariantsBulkCreate", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// VariantsBulkCreate indicates an expected call of VariantsBulkCreate.
+func (mr *MockProductServiceMockRecorder) VariantsBulkCreate(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VariantsBulkCreate", reflect.TypeOf((*MockProductService)(nil).VariantsBulkCreate), arg0, arg1)
+}
+
+// VariantsBulkReorder mocks base method.
+func (m *MockProductService) VariantsBulkReorder(arg0 string, arg1 []model.ProductVariantPositionInput) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VariantsBulkReorder", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// VariantsBulkReorder indicates an expected call of VariantsBulkReorder.
+func (mr *MockProductServiceMockRecorder) VariantsBulkReorder(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VariantsBulkReorder", reflect.TypeOf((*MockProductService)(nil).VariantsBulkReorder), arg0, arg1)
 }

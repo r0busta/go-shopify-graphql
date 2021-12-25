@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/r0busta/go-shopify-graphql-model/graph/model"
+	"github.com/r0busta/go-shopify-graphql-model/v2/graph/model"
 	"github.com/r0busta/graphql"
 )
 
@@ -16,7 +16,7 @@ type OrderService interface {
 	List(opts ListOptions) ([]model.Order, error)
 	ListAll() ([]model.Order, error)
 
-	ListAfterCursor(opts ListOptions) ([]model.Order, string, string, error)
+	ListAfterCursor(opts ListOptions) ([]model.Order, *string, *string, error)
 
 	Update(input model.OrderInput) error
 
@@ -27,8 +27,12 @@ type OrderServiceOp struct {
 	client *Client
 }
 
+var _ OrderService = &OrderServiceOp{}
+
 type mutationOrderUpdate struct {
-	OrderUpdateResult model.OrderUpdatePayload `graphql:"orderUpdate(input: $input)" json:"orderUpdate"`
+	OrderUpdateResult struct {
+		UserErrors []model.UserError `json:"userErrors,omitempty"`
+	} `graphql:"orderUpdate(input: $input)" json:"orderUpdate"`
 }
 
 const orderBaseQuery = `
@@ -265,7 +269,7 @@ func (s *OrderServiceOp) Get(id graphql.ID) (*model.Order, error) {
 	}{}
 	err := s.client.gql.QueryString(context.Background(), q, vars, &out)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query: %w", err)
 	}
 
 	return out.Order, nil
@@ -298,7 +302,7 @@ func (s *OrderServiceOp) List(opts ListOptions) ([]model.Order, error) {
 	res := []model.Order{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []model.Order{}, err
+		return nil, fmt.Errorf("bulk query: %w", err)
 	}
 
 	return res, nil
@@ -329,13 +333,13 @@ func (s *OrderServiceOp) ListAll() ([]model.Order, error) {
 	res := []model.Order{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []model.Order{}, err
+		return nil, fmt.Errorf("bulk query: %w", err)
 	}
 
 	return res, nil
 }
 
-func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]model.Order, string, string, error) {
+func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]model.Order, *string, *string, error) {
 	q := fmt.Sprintf(`
 		query orders($query: String, $first: Int, $last: Int, $before: String, $after: String, $reverse: Boolean) {
 			orders(query: $query, first: $first, last: $last, before: $before, after: $after, reverse: $reverse){
@@ -392,15 +396,15 @@ func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]model.Order, strin
 	}{}
 	err := s.client.gql.QueryString(context.Background(), q, vars, &out)
 	if err != nil {
-		return nil, "", "", err
+		return nil, nil, nil, fmt.Errorf("query: %w", err)
 	}
 
 	res := []model.Order{}
-	firstCursor := ""
-	lastCursor := ""
+	var firstCursor *string
+	var lastCursor *string
 	if len(out.Orders.Edges) > 0 {
-		firstCursor = out.Orders.Edges[0].Cursor
-		lastCursor = out.Orders.Edges[len(out.Orders.Edges)-1].Cursor
+		firstCursor = &out.Orders.Edges[0].Cursor
+		lastCursor = &out.Orders.Edges[len(out.Orders.Edges)-1].Cursor
 		for _, o := range out.Orders.Edges {
 			res = append(res, *o.OrderQueryResult)
 		}
@@ -417,7 +421,7 @@ func (s *OrderServiceOp) Update(input model.OrderInput) error {
 	}
 	err := s.client.gql.Mutate(context.Background(), &m, vars)
 	if err != nil {
-		return err
+		return fmt.Errorf("mutation: %w", err)
 	}
 
 	if len(m.OrderUpdateResult.UserErrors) > 0 {
@@ -458,7 +462,7 @@ func (s *OrderServiceOp) GetFulfillmentOrdersAtLocation(orderID graphql.ID, loca
 	res := []model.FulfillmentOrder{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {
-		return []model.FulfillmentOrder{}, err
+		return nil, fmt.Errorf("bulk query: %w", err)
 	}
 
 	return res, nil

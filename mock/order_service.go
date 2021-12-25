@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/r0busta/go-shopify-graphql-model/graph/model"
+	model "github.com/r0busta/go-shopify-graphql-model/v2/graph/model"
 	shopify "github.com/r0busta/go-shopify-graphql/v5"
 	graphql "github.com/r0busta/graphql"
 )
@@ -82,12 +82,12 @@ func (mr *MockOrderServiceMockRecorder) List(arg0 interface{}) *gomock.Call {
 }
 
 // ListAfterCursor mocks base method.
-func (m *MockOrderService) ListAfterCursor(arg0 shopify.ListOptions) ([]model.Order, string, string, error) {
+func (m *MockOrderService) ListAfterCursor(arg0 shopify.ListOptions) ([]model.Order, *string, *string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListAfterCursor", arg0)
 	ret0, _ := ret[0].([]model.Order)
-	ret1, _ := ret[1].(string)
-	ret2, _ := ret[2].(string)
+	ret1, _ := ret[1].(*string)
+	ret2, _ := ret[2].(*string)
 	ret3, _ := ret[3].(error)
 	return ret0, ret1, ret2, ret3
 }

@@ -18,10 +18,10 @@ var (
 	apiEndpoint   = "graphql.json"
 )
 
-// Option is used to configure options
+// Option is used to configure options.
 type Option func(t *transport)
 
-// WithVersion optionally sets the API version if the passed string is valid
+// WithVersion optionally sets the API version if the passed string is valid.
 func WithVersion(apiVersion string) Option {
 	return func(t *transport) {
 		if apiVersion != "" {
@@ -32,14 +32,14 @@ func WithVersion(apiVersion string) Option {
 	}
 }
 
-// WithToken optionally sets oauth token
+// WithToken optionally sets oauth token.
 func WithToken(token string) Option {
 	return func(t *transport) {
 		t.accessToken = token
 	}
 }
 
-// WithPrivateAppAuth optionally sets private app credentials
+// WithPrivateAppAuth optionally sets private app credentials.
 func WithPrivateAppAuth(apiKey string, password string) Option {
 	return func(t *transport) {
 		t.apiKey = apiKey
@@ -63,7 +63,7 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return http.DefaultTransport.RoundTrip(req)
 }
 
-// NewClient creates a new client (in fact, just a simple wrapper for a graphql.Client)
+// NewClient creates a new client (in fact, just a simple wrapper for a graphql.Client).
 func NewClient(shopName string, opts ...Option) *graphql.Client {
 	transport := &transport{}
 
@@ -71,7 +71,9 @@ func NewClient(shopName string, opts ...Option) *graphql.Client {
 		opt(transport)
 	}
 
-	httpClient := &http.Client{Transport: transport}
+	httpClient := &http.Client{
+		Transport: transport,
+	}
 
 	url := buildAPIEndpoint(shopName)
 

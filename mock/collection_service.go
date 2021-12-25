@@ -8,8 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/r0busta/go-shopify-graphql-model/graph/model"
-	graphql "github.com/r0busta/graphql"
+	model "github.com/r0busta/go-shopify-graphql-model/v2/graph/model"
 )
 
 // MockCollectionService is a mock of CollectionService interface.
@@ -36,10 +35,10 @@ func (m *MockCollectionService) EXPECT() *MockCollectionServiceMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockCollectionService) Create(arg0 model.CollectionInput) (string, error) {
+func (m *MockCollectionService) Create(arg0 model.CollectionInput) (*string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(*string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -65,7 +64,7 @@ func (mr *MockCollectionServiceMockRecorder) CreateBulk(arg0 interface{}) *gomoc
 }
 
 // Get mocks base method.
-func (m *MockCollectionService) Get(arg0 graphql.ID) (*model.Collection, error) {
+func (m *MockCollectionService) Get(arg0 string) (*model.Collection, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0)
 	ret0, _ := ret[0].(*model.Collection)

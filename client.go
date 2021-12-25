@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	shopifyAPIVersion = "2021-10"
+	defaultShopifyAPIVersion = "2021-10"
 )
 
 type Client struct {
-	gql *graphql.Client
+	gql graphql.GraphQL
 
 	Product       ProductService
 	Variant       VariantService
@@ -26,16 +26,15 @@ type Client struct {
 	BulkOperation BulkOperationService
 }
 
-type ListOptions struct {
-	Query   string
-	First   int
-	Last    int
-	After   string
-	Before  string
-	Reverse bool
+type Option func(shopClient *Client)
+
+func WithGraphQLClient(gql graphql.GraphQL) Option {
+	return func(c *Client) {
+		c.gql = gql
+	}
 }
 
-func NewDefaultClient() (shopClient *Client) {
+func NewDefaultClient(opts ...Option) *Client {
 	apiKey := os.Getenv("STORE_API_KEY")
 	password := os.Getenv("STORE_PASSWORD")
 	storeName := os.Getenv("STORE_NAME")
@@ -43,13 +42,19 @@ func NewDefaultClient() (shopClient *Client) {
 		log.Fatalln("Shopify app API Key and/or Password and/or Store Name not set")
 	}
 
-	shopClient = NewClient(apiKey, password, storeName)
-
-	return
+	return NewClient(apiKey, password, storeName, opts...)
 }
 
-func NewClient(apiKey string, password string, storeName string) *Client {
-	c := &Client{gql: newShopifyGraphQLClient(apiKey, password, storeName)}
+func NewClient(apiKey string, password string, storeName string, opts ...Option) *Client {
+	c := &Client{}
+
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	if c.gql == nil {
+		c.gql = newShopifyGraphQLClient(apiKey, password, storeName)
+	}
 
 	c.Product = &ProductServiceOp{client: c}
 	c.Variant = &VariantServiceOp{client: c}
@@ -66,12 +71,12 @@ func NewClient(apiKey string, password string, storeName string) *Client {
 
 func newShopifyGraphQLClient(apiKey string, password string, storeName string) *graphql.Client {
 	opts := []graphqlclient.Option{
-		graphqlclient.WithVersion(shopifyAPIVersion),
+		graphqlclient.WithVersion(defaultShopifyAPIVersion),
 		graphqlclient.WithPrivateAppAuth(apiKey, password),
 	}
 	return graphqlclient.NewClient(storeName, opts...)
 }
 
-func (c *Client) GraphQLClient() *graphql.Client {
+func (c *Client) GraphQLClient() graphql.GraphQL {
 	return c.gql
 }

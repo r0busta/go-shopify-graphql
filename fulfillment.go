@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/r0busta/go-shopify-graphql-model/graph/model"
+	"github.com/r0busta/go-shopify-graphql-model/v2/graph/model"
 )
 
 //go:generate mockgen -destination=./mock/fulfillment_service.go -package=mock . FulfillmentService
@@ -16,8 +16,12 @@ type FulfillmentServiceOp struct {
 	client *Client
 }
 
+var _ FulfillmentService = &FulfillmentServiceOp{}
+
 type mutationFulfillmentCreateV2 struct {
-	FulfillmentCreateV2Result model.FulfillmentCreateV2Payload `graphql:"fulfillmentCreateV2(fulfillment: $fulfillment)" json:"fulfillmentCreateV2"`
+	FulfillmentCreateV2Result struct {
+		UserErrors []model.UserError `json:"userErrors,omitempty"`
+	} `graphql:"fulfillmentCreateV2(fulfillment: $fulfillment)" json:"fulfillmentCreateV2"`
 }
 
 func (s *FulfillmentServiceOp) Create(fulfillment model.FulfillmentV2Input) error {
@@ -28,7 +32,7 @@ func (s *FulfillmentServiceOp) Create(fulfillment model.FulfillmentV2Input) erro
 	}
 	err := s.client.gql.Mutate(context.Background(), &m, vars)
 	if err != nil {
-		return fmt.Errorf("Mutation error: %s", err)
+		return fmt.Errorf("mutation: %s", err)
 	}
 
 	if len(m.FulfillmentCreateV2Result.UserErrors) > 0 {

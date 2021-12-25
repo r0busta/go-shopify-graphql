@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/r0busta/go-shopify-graphql-model/graph/model"
+	model "github.com/r0busta/go-shopify-graphql-model/v2/graph/model"
 )
 
 // MockFulfillmentService is a mock of FulfillmentService interface.

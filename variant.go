@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/r0busta/go-shopify-graphql-model/graph/model"
+	"github.com/r0busta/go-shopify-graphql-model/v2/graph/model"
 )
 
 //go:generate mockgen -destination=./mock/variant_service.go -package=mock . VariantService
@@ -16,8 +16,12 @@ type VariantServiceOp struct {
 	client *Client
 }
 
+var _ VariantService = &VariantServiceOp{}
+
 type mutationProductVariantUpdate struct {
-	ProductVariantUpdateResult model.ProductVariantUpdatePayload `graphql:"productVariantUpdate(input: $input)" json:"productVariantUpdate"`
+	ProductVariantUpdateResult struct {
+		UserErrors []model.UserError `json:"userErrors,omitempty"`
+	} `graphql:"productVariantUpdate(input: $input)" json:"productVariantUpdate"`
 }
 
 func (s *VariantServiceOp) Update(variant model.ProductVariantInput) error {
@@ -28,7 +32,7 @@ func (s *VariantServiceOp) Update(variant model.ProductVariantInput) error {
 	}
 	err := s.client.gql.Mutate(context.Background(), &m, vars)
 	if err != nil {
-		return err
+		return fmt.Errorf("mutation: %w", err)
 	}
 
 	if len(m.ProductVariantUpdateResult.UserErrors) > 0 {

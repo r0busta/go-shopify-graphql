@@ -8,8 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/r0busta/go-shopify-graphql-model/graph/model"
-	graphql "github.com/r0busta/graphql"
+	model "github.com/r0busta/go-shopify-graphql-model/v2/graph/model"
 )
 
 // MockLocationService is a mock of LocationService interface.
@@ -36,7 +35,7 @@ func (m *MockLocationService) EXPECT() *MockLocationServiceMockRecorder {
 }
 
 // Get mocks base method.
-func (m *MockLocationService) Get(arg0 graphql.ID) (*model.Location, error) {
+func (m *MockLocationService) Get(arg0 string) (*model.Location, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0)
 	ret0, _ := ret[0].(*model.Location)

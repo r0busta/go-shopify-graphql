@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/r0busta/go-shopify-graphql-model/graph/model"
+	model "github.com/r0busta/go-shopify-graphql-model/v2/graph/model"
 )
 
 // MockMetafieldService is a mock of MetafieldService interface.
@@ -63,10 +63,10 @@ func (mr *MockMetafieldServiceMockRecorder) DeleteBulk(arg0 interface{}) *gomock
 }
 
 // GetShopMetafieldByKey mocks base method.
-func (m *MockMetafieldService) GetShopMetafieldByKey(arg0, arg1 string) (model.Metafield, error) {
+func (m *MockMetafieldService) GetShopMetafieldByKey(arg0, arg1 string) (*model.Metafield, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetShopMetafieldByKey", arg0, arg1)
-	ret0, _ := ret[0].(model.Metafield)
+	ret0, _ := ret[0].(*model.Metafield)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
