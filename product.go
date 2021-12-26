@@ -149,6 +149,7 @@ var productBulkQuery = fmt.Sprintf(`
 					name
 					value
 				}
+				position
 				compareAtPrice
 				price
 				inventoryQuantity
