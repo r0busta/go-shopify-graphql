@@ -22,6 +22,7 @@ type ProductService interface {
 	Delete(product model.ProductDeleteInput) error
 
 	VariantsBulkCreate(id string, input []model.ProductVariantsBulkInput) error
+	VariantsBulkUpdate(id string, input []model.ProductVariantsBulkInput) error
 	VariantsBulkReorder(id string, input []model.ProductVariantPositionInput) error
 }
 
@@ -57,6 +58,12 @@ type mutationProductVariantsBulkCreate struct {
 	ProductVariantsBulkCreateResult struct {
 		UserErrors []model.UserError `json:"userErrors,omitempty"`
 	} `graphql:"productVariantsBulkCreate(productId: $productId, variants: $variants)" json:"productVariantsBulkCreate"`
+}
+
+type mutationProductVariantsBulkUpdate struct {
+	ProductVariantsBulkUpdateResult struct {
+		UserErrors []model.UserError `json:"userErrors,omitempty"`
+	} `graphql:"productVariantsBulkUpdate(productId: $productId, variants: $variants)" json:"productVariantsBulkUpdate"`
 }
 
 type mutationProductVariantsBulkReorder struct {
@@ -325,6 +332,25 @@ func (s *ProductServiceOp) VariantsBulkCreate(id string, input []model.ProductVa
 
 	if len(m.ProductVariantsBulkCreateResult.UserErrors) > 0 {
 		return fmt.Errorf("%+v", m.ProductVariantsBulkCreateResult.UserErrors)
+	}
+
+	return nil
+}
+
+func (s *ProductServiceOp) VariantsBulkUpdate(id string, input []model.ProductVariantsBulkInput) error {
+	m := mutationProductVariantsBulkUpdate{}
+
+	vars := map[string]interface{}{
+		"productId": id,
+		"variants":  input,
+	}
+	err := s.client.gql.Mutate(context.Background(), &m, vars)
+	if err != nil {
+		return fmt.Errorf("mutation: %w", err)
+	}
+
+	if len(m.ProductVariantsBulkUpdateResult.UserErrors) > 0 {
+		return fmt.Errorf("%+v", m.ProductVariantsBulkUpdateResult.UserErrors)
 	}
 
 	return nil
