@@ -79,6 +79,7 @@ const productBaseQuery = `
 	options{
 		name
 		values
+		position
 	}
 	tags
 	title
