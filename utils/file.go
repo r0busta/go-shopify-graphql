@@ -17,6 +17,7 @@ func ReadFile(file string) (string, error) {
 	var bytes []byte
 	bytes, err := ioutil.ReadFile(file)
 	data := string(bytes)
+
 	return data, err
 }
 
@@ -34,5 +35,6 @@ func DownloadFile(filepath string, url string) error {
 	defer CloseFile(out)
 
 	_, err = io.Copy(out, resp.Body)
+
 	return err
 }

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/r0busta/go-shopify-graphql-model/v2/graph/model"
+	"github.com/r0busta/go-shopify-graphql-model/v3/graph/model"
 	"github.com/r0busta/graphql"
 )
 
@@ -20,7 +20,7 @@ type OrderService interface {
 
 	Update(input model.OrderInput) error
 
-	GetFulfillmentOrdersAtLocation(orderID graphql.ID, locationID graphql.ID) ([]model.FulfillmentOrder, error)
+	GetFulfillmentOrdersAtLocation(orderID graphql.ID, locationID int64) ([]model.FulfillmentOrder, error)
 }
 
 type OrderServiceOp struct {
@@ -431,7 +431,7 @@ func (s *OrderServiceOp) Update(input model.OrderInput) error {
 	return nil
 }
 
-func (s *OrderServiceOp) GetFulfillmentOrdersAtLocation(orderID graphql.ID, locationID graphql.ID) ([]model.FulfillmentOrder, error) {
+func (s *OrderServiceOp) GetFulfillmentOrdersAtLocation(orderID graphql.ID, locationID int64) ([]model.FulfillmentOrder, error) {
 	q := `
 	{
 		order(id:"$id"){
@@ -458,7 +458,7 @@ func (s *OrderServiceOp) GetFulfillmentOrdersAtLocation(orderID graphql.ID, loca
 	}`
 
 	q = strings.ReplaceAll(q, "$id", orderID.(string))
-	q = strings.ReplaceAll(q, "$query", fmt.Sprintf(`assigned_location_id:%s`, locationID.(string)))
+	q = strings.ReplaceAll(q, "$query", fmt.Sprintf(`assigned_location_id:%d`, locationID))
 	res := []model.FulfillmentOrder{}
 	err := s.client.BulkOperation.BulkQuery(q, &res)
 	if err != nil {

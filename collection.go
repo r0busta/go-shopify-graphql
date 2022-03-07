@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/r0busta/go-shopify-graphql-model/v2/graph/model"
+	"github.com/r0busta/go-shopify-graphql-model/v3/graph/model"
 	log "github.com/sirupsen/logrus"
 )
 
