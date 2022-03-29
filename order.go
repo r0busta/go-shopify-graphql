@@ -19,8 +19,6 @@ type OrderService interface {
 	ListAfterCursor(opts ListOptions) ([]model.Order, *string, *string, error)
 
 	Update(input model.OrderInput) error
-
-	GetFulfillmentOrdersAtLocation(orderID graphql.ID, locationID int64) ([]model.FulfillmentOrder, error)
 }
 
 type OrderServiceOp struct {
@@ -429,41 +427,4 @@ func (s *OrderServiceOp) Update(input model.OrderInput) error {
 	}
 
 	return nil
-}
-
-func (s *OrderServiceOp) GetFulfillmentOrdersAtLocation(orderID graphql.ID, locationID int64) ([]model.FulfillmentOrder, error) {
-	q := `
-	{
-		order(id:"$id"){
-			fulfillmentOrders(query:"$query"){
-				edges {
-					node {
-						id
-						status
-						lineItems{
-							edges {
-								node {
-									id
-									remainingQuantity
-									lineItem{
-										sku
-									}								
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}`
-
-	q = strings.ReplaceAll(q, "$id", orderID.(string))
-	q = strings.ReplaceAll(q, "$query", fmt.Sprintf(`assigned_location_id:%d`, locationID))
-	res := []model.FulfillmentOrder{}
-	err := s.client.BulkOperation.BulkQuery(q, &res)
-	if err != nil {
-		return nil, fmt.Errorf("bulk query: %w", err)
-	}
-
-	return res, nil
 }
