@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -112,7 +113,7 @@ func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(id *string) (*strin
 	}
 
 	if q.ObjectCount == "0" {
-		return nil, nil
+		return nil, fmt.Errorf("Bulk operation didn't return any objects")
 	}
 
 	if q.URL == nil {
@@ -128,7 +129,7 @@ func (s *BulkOperationServiceOp) WaitForCurrentBulkQuery(interval time.Duration)
 		return q, fmt.Errorf("CurrentBulkOperation query error: %s", err)
 	}
 
-	for q.Status == "CREATED" || q.Status == "RUNNING" || q.Status == "CANCELING" {
+	for q.Status == model.BulkOperationStatusCreated || q.Status == model.BulkOperationStatusRunning || q.Status == model.BulkOperationStatusCanceling {
 		log.Debugf("Bulk operation is still %s...", q.Status)
 		time.Sleep(interval)
 
@@ -148,7 +149,7 @@ func (s *BulkOperationServiceOp) CancelRunningBulkQuery() error {
 		return err
 	}
 
-	if q.Status == "CREATED" || q.Status == "RUNNING" {
+	if q.Status == model.BulkOperationStatusCreated || q.Status == model.BulkOperationStatusRunning {
 		log.Debugln("Canceling running operation")
 		operationID := q.ID
 
@@ -169,7 +170,7 @@ func (s *BulkOperationServiceOp) CancelRunningBulkQuery() error {
 		if err != nil {
 			return err
 		}
-		for q.Status == "CREATED" || q.Status == "RUNNING" || q.Status == "CANCELING" {
+		for q.Status == model.BulkOperationStatusCreated || q.Status == model.BulkOperationStatusRunning || q.Status == model.BulkOperationStatusCanceling {
 			log.Tracef("Bulk operation still %s...", q.Status)
 			q, err = s.GetCurrentBulkQuery()
 			if err != nil {
@@ -391,7 +392,7 @@ func parseBulkQueryResult(resultFilePath string, out interface{}) error {
 	}
 
 	// check if ReadBytes returned an error different from EOF
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("reading the result file: %w", err)
 	}
 
