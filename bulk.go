@@ -113,7 +113,7 @@ func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(id *string) (*strin
 	}
 
 	if q.ObjectCount == "0" {
-		return nil, fmt.Errorf("Bulk operation didn't return any objects")
+		return nil, nil
 	}
 
 	if q.URL == nil {
