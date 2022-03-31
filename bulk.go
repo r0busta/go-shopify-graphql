@@ -341,59 +341,87 @@ func parseBulkQueryResult(resultFilePath string, out interface{}) error {
 	}
 
 	if len(connectionSink) > 0 {
-		for i := 0; i < outSlice.Len(); i++ {
-			parent := outSlice.Index(i)
-			if parent.Kind() == reflect.Ptr {
-				parent = parent.Elem()
-			}
-
-			parentIDField := parent.FieldByName("ID")
-			if parentIDField.IsZero() {
-				return fmt.Errorf("No ID field on the first level")
-			}
-
-			var parentID string
-			var ok bool
-			if parentID, ok = parentIDField.Interface().(string); !ok {
-				return fmt.Errorf("ID field on the first level is not a string")
-			}
-
-			if connection, ok := connectionSink[parentID]; ok {
-				edgeVal := reflect.ValueOf(connection)
-				iter := edgeVal.MapRange()
-				for iter.Next() {
-					connectionName := iter.Key()
-					connectionField := parent.FieldByName(connectionName.String())
-					if !connectionField.IsValid() {
-						return fmt.Errorf("Connection '%s' is not defined on the parent type %s", connectionName.String(), parent.Type().String())
-					}
-
-					var connectionValue reflect.Value
-					var edgesField reflect.Value
-					if connectionField.Kind() == reflect.Ptr {
-						connectionValue = reflect.ValueOf(reflect.New(connectionField.Type().Elem()).Interface())
-						edgesField = connectionValue.Elem().FieldByName(edgesFieldName)
-					} else {
-						connectionValue = reflect.ValueOf(reflect.New(connectionField.Type()).Interface())
-						edgesField = connectionValue.Elem().FieldByName(edgesFieldName)
-					}
-
-					if !edgesField.IsValid() {
-						return fmt.Errorf("Connection %s in the '%s' doesn't have the Edges field", connectionName.String(), parent.Type().String())
-					}
-
-					edges := reflect.ValueOf(iter.Value().Interface())
-					edgesField.Set(edges)
-
-					connectionField.Set(connectionValue)
-				}
-			}
+		err := attachNestedConnections(connectionSink, outSlice)
+		if err != nil {
+			return fmt.Errorf("error processing nested connections: %w", err)
 		}
 	}
 
 	// check if ReadBytes returned an error different from EOF
 	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("reading the result file: %w", err)
+	}
+
+	return nil
+}
+
+func attachNestedConnections(connectionSink map[string]interface{}, outSlice reflect.Value) error {
+	for i := 0; i < outSlice.Len(); i++ {
+		parent := outSlice.Index(i)
+		if parent.Kind() == reflect.Ptr {
+			parent = parent.Elem()
+		}
+
+		nodeField := parent.FieldByName("Node")
+		if nodeField != (reflect.Value{}) {
+			if nodeField.Kind() == reflect.Ptr {
+				parent = nodeField.Elem()
+			} else if nodeField.Kind() == reflect.Interface {
+				parent = nodeField.Elem().Elem()
+			} else {
+				parent = nodeField
+			}
+		}
+
+		parentIDField := parent.FieldByName("ID")
+		if parentIDField == (reflect.Value{}) {
+			return fmt.Errorf("No ID field on the first level")
+		}
+
+		var parentID string
+		var ok bool
+		if parentID, ok = parentIDField.Interface().(string); !ok {
+			return fmt.Errorf("ID field on the first level is not a string")
+		}
+
+		var connection interface{}
+		if connection, ok = connectionSink[parentID]; !ok {
+			continue
+		}
+
+		edgeMap := reflect.ValueOf(connection)
+		iter := edgeMap.MapRange()
+		for iter.Next() {
+			connectionName := iter.Key()
+			connectionField := parent.FieldByName(connectionName.String())
+			if !connectionField.IsValid() {
+				return fmt.Errorf("Connection '%s' is not defined on the parent type %s", connectionName.String(), parent.Type().String())
+			}
+
+			var connectionValue reflect.Value
+			var edgesField reflect.Value
+			if connectionField.Kind() == reflect.Ptr {
+				connectionValue = reflect.ValueOf(reflect.New(connectionField.Type().Elem()).Interface())
+				edgesField = connectionValue.Elem().FieldByName(edgesFieldName)
+			} else {
+				connectionValue = reflect.ValueOf(reflect.New(connectionField.Type()).Interface())
+				edgesField = connectionValue.Elem().FieldByName(edgesFieldName)
+			}
+
+			if !edgesField.IsValid() {
+				return fmt.Errorf("Connection %s in the '%s' doesn't have the Edges field", connectionName.String(), parent.Type().String())
+			}
+
+			edges := reflect.ValueOf(iter.Value().Interface())
+			edgesField.Set(edges)
+
+			connectionField.Set(connectionValue)
+
+			err := attachNestedConnections(connectionSink, iter.Value().Elem())
+			if err != nil {
+				return fmt.Errorf("error attacing a nested connection: %w", err)
+			}
+		}
 	}
 
 	return nil
@@ -412,6 +440,8 @@ func concludeObjectType(gid string) (reflect.Type, reflect.Type, string, error) 
 		return reflect.TypeOf(model.FulfillmentOrderLineItemEdge{}), reflect.TypeOf(&model.FulfillmentOrderLineItem{}), "LineItems", nil
 	case "FulfillmentOrder":
 		return reflect.TypeOf(model.FulfillmentOrderEdge{}), reflect.TypeOf(&model.FulfillmentOrder{}), fmt.Sprintf("%ss", resource), nil
+	case "MediaImage":
+		return reflect.TypeOf(model.MediaEdge{}), reflect.TypeOf(&model.MediaImage{}), "Media", nil
 	case "Metafield":
 		return reflect.TypeOf(model.MetafieldEdge{}), reflect.TypeOf(&model.Metafield{}), fmt.Sprintf("%ss", resource), nil
 	case "Order":
