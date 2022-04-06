@@ -84,6 +84,7 @@ const productBaseQuery = `
 	tags
 	title
 	description
+	descriptionPlainSummary
 	priceRangeV2{
 		minVariantPrice{
 			amount
@@ -104,6 +105,14 @@ const productBaseQuery = `
 		title
 	}
 	templateSuffix
+	customProductType
+	featuredImage{
+		id
+		altText
+		height
+		width
+		url
+	}
 `
 
 var productQuery = fmt.Sprintf(`
@@ -113,10 +122,19 @@ var productQuery = fmt.Sprintf(`
 			node{
 				id
 				legacyResourceId
+				title
+				displayName
 				sku
 				selectedOptions{
 					name
 					value
+				}
+				image {
+					id
+					altText
+					height
+					width
+					url
 				}
 				compareAtPrice
 				price
@@ -125,6 +143,7 @@ var productQuery = fmt.Sprintf(`
 					id
 					legacyResourceId							
 				}
+				availableForSale
 			}
 		}
 		pageInfo{
@@ -152,12 +171,20 @@ var productBulkQuery = fmt.Sprintf(`
 			node{
 				id
 				legacyResourceId
+				title
+				displayName
 				sku
 				selectedOptions{
 					name
 					value
 				}
-				position
+				image {
+					id
+					altText
+					height
+					width
+					url
+				}
 				compareAtPrice
 				price
 				inventoryQuantity
@@ -165,6 +192,7 @@ var productBulkQuery = fmt.Sprintf(`
 					id
 					legacyResourceId							
 				}
+				availableForSale
 			}
 		}
 	}
