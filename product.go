@@ -129,6 +129,7 @@ var productQuery = fmt.Sprintf(`
 					name
 					value
 				}
+				position
 				image {
 					id
 					altText
@@ -178,6 +179,7 @@ var productBulkQuery = fmt.Sprintf(`
 					name
 					value
 				}
+				position
 				image {
 					id
 					altText
