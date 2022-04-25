@@ -1,8 +1,6 @@
 package shopify
 
 import (
-	"os"
-
 	graphqlclient "github.com/r0busta/go-shopify-graphql/v6/graphql"
 	"github.com/r0busta/graphql"
 	log "github.com/sirupsen/logrus"
@@ -34,10 +32,7 @@ func WithGraphQLClient(gql graphql.GraphQL) Option {
 	}
 }
 
-func NewDefaultClient(opts ...Option) *Client {
-	apiKey := os.Getenv("STORE_API_KEY")
-	password := os.Getenv("STORE_PASSWORD")
-	storeName := os.Getenv("STORE_NAME")
+func NewDefaultClient(apiKey, password, storeName string, opts ...Option) *Client {
 	if apiKey == "" || password == "" || storeName == "" {
 		log.Fatalln("Shopify app API Key and/or Password and/or Store Name not set")
 	}

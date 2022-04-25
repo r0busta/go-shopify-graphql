@@ -15,7 +15,7 @@ func TestBulkOperationEndToEnd(t *testing.T) {
 	require.NotZero(t, os.Getenv("STORE_PASSWORD"))
 	require.NotZero(t, os.Getenv("STORE_NAME"))
 
-	client := shopify.NewDefaultClient()
+	client := shopify.NewDefaultClient("api_key", "password", "store_name")
 
 	q := `
 	{

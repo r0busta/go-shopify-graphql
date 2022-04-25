@@ -27,7 +27,7 @@ import (
 
 func main() {
     // Create client
-    client := shopify.NewDefaultClient()
+    client := shopify.NewDefaultClient("api_key", "password", "shop_name")
 
     // Get all collections
     collections, err := client.Collection.ListAll()
