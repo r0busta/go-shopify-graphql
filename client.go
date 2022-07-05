@@ -25,7 +25,7 @@ type Client struct {
 	Metafield    MetafieldService
 	PriceList    PriceListService
 	StagedUpload StagedUploadService
-	File         FileCreateService
+	File         FileService
 
 	BulkOperation BulkOperationService
 }
@@ -73,7 +73,7 @@ func NewClient(apiKey string, password string, storeName string) *Client {
 
 	c.PriceList = &PriceListServiceOp{c.BulkOperation, c.gql}
 	c.StagedUpload = &StagedUploadOp{mutationClient: c.gql}
-	c.File = &FileCreateOp{mutationClient: c.gql}
+	c.File = &FileOp{gqlClient: c.gql}
 
 	return c
 }
