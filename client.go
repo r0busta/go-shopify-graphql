@@ -15,15 +15,17 @@ const (
 type Client struct {
 	gql *graphql.Client
 
-	Product     ProductService
-	Variant     VariantService
-	Inventory   InventoryService
-	Collection  CollectionService
-	Order       OrderService
-	Fulfillment FulfillmentService
-	Location    LocationService
-	Metafield   MetafieldService
-	PriceList   PriceListService
+	Product      ProductService
+	Variant      VariantService
+	Inventory    InventoryService
+	Collection   CollectionService
+	Order        OrderService
+	Fulfillment  FulfillmentService
+	Location     LocationService
+	Metafield    MetafieldService
+	PriceList    PriceListService
+	StagedUpload StagedUploadService
+	File         FileCreateService
 
 	BulkOperation BulkOperationService
 }
@@ -70,6 +72,8 @@ func NewClient(apiKey string, password string, storeName string) *Client {
 	// c.Metafield = &MetafieldServiceOp{client: c}
 
 	c.PriceList = &PriceListServiceOp{c.BulkOperation, c.gql}
+	c.StagedUpload = &StagedUploadOp{mutationClient: c.gql}
+	c.File = &FileCreateOp{mutationClient: c.gql}
 
 	return c
 }
