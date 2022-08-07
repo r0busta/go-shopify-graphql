@@ -51,21 +51,6 @@ func (mr *MockOrderServiceMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockOrderService)(nil).Get), arg0)
 }
 
-// GetFulfillmentOrdersAtLocation mocks base method.
-func (m *MockOrderService) GetFulfillmentOrdersAtLocation(arg0 graphql.ID, arg1 int64) ([]model.FulfillmentOrder, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFulfillmentOrdersAtLocation", arg0, arg1)
-	ret0, _ := ret[0].([]model.FulfillmentOrder)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetFulfillmentOrdersAtLocation indicates an expected call of GetFulfillmentOrdersAtLocation.
-func (mr *MockOrderServiceMockRecorder) GetFulfillmentOrdersAtLocation(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFulfillmentOrdersAtLocation", reflect.TypeOf((*MockOrderService)(nil).GetFulfillmentOrdersAtLocation), arg0, arg1)
-}
-
 // List mocks base method.
 func (m *MockOrderService) List(arg0 shopify.ListOptions) ([]model.Order, error) {
 	m.ctrl.T.Helper()
