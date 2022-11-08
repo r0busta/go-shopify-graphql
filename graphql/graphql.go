@@ -40,24 +40,26 @@ func WithToken(token string) Option {
 }
 
 // WithPrivateAppAuth optionally sets private app credentials.
-func WithPrivateAppAuth(apiKey string, password string) Option {
+func WithPrivateAppAuth(apiKey string, accessToken string) Option {
 	return func(t *transport) {
 		t.apiKey = apiKey
-		t.password = password
+		t.accessToken = accessToken
 	}
 }
 
 type transport struct {
 	accessToken string
 	apiKey      string
-	password    string
 }
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	if t.accessToken != "" {
+	isAccessTokenSet := t.accessToken != ""
+	areBasicAuthCredentialsSet := t.apiKey != "" && isAccessTokenSet
+
+	if areBasicAuthCredentialsSet {
+		req.SetBasicAuth(t.apiKey, t.accessToken)
+	} else if isAccessTokenSet {
 		req.Header.Set(shopifyAccessTokenHeader, t.accessToken)
-	} else if t.apiKey != "" && t.password != "" {
-		req.SetBasicAuth(t.apiKey, t.password)
 	}
 
 	return http.DefaultTransport.RoundTrip(req)

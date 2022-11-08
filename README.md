@@ -10,7 +10,7 @@ Hello World example
 
 ```bash
 export STORE_API_KEY=<private_app_api_key>
-export STORE_PASSWORD=<private_app_password>
+export STORE_PASSWORD=<private_app_access_token>
 export STORE_NAME=<store_name>
 ```
 
