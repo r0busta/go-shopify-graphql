@@ -1,6 +1,15 @@
 package main
 
 func main() {
-	// clientWithToken()
-	defaultClient()
+	client := defaultClient()
+	// client := clientWithToken()
+
+	// Collections
+	collections(client)
+
+	// Products
+	products(client)
+
+	// Bulk operations
+	// bulk(client)
 }
