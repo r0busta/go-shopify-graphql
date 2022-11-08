@@ -10,12 +10,10 @@ import (
 const (
 	shopifyBaseDomain        = "myshopify.com"
 	shopifyAccessTokenHeader = "X-Shopify-Access-Token"
-)
 
-var (
-	apiProtocol   = "https"
-	apiPathPrefix = "admin/api"
-	apiEndpoint   = "graphql.json"
+	defaultAPIProtocol   = "https"
+	defaultAPIEndpoint   = "graphql.json"
+	defaultAPIPathPrefix = "admin/api"
 )
 
 // Option is used to configure options.
@@ -25,21 +23,21 @@ type Option func(t *transport)
 func WithVersion(apiVersion string) Option {
 	return func(t *transport) {
 		if apiVersion != "" {
-			apiPathPrefix = fmt.Sprintf("admin/api/%s", apiVersion)
+			t.apiPathPrefix = fmt.Sprintf("%s/%s", defaultAPIPathPrefix, apiVersion)
 		} else {
-			apiPathPrefix = "admin/api"
+			t.apiPathPrefix = defaultAPIPathPrefix
 		}
 	}
 }
 
-// WithToken optionally sets oauth token.
+// WithToken optionally sets access token.
 func WithToken(token string) Option {
 	return func(t *transport) {
 		t.accessToken = token
 	}
 }
 
-// WithPrivateAppAuth optionally sets private app credentials.
+// WithPrivateAppAuth optionally sets private app credentials (API key and access token).
 func WithPrivateAppAuth(apiKey string, accessToken string) Option {
 	return func(t *transport) {
 		t.apiKey = apiKey
@@ -48,8 +46,9 @@ func WithPrivateAppAuth(apiKey string, accessToken string) Option {
 }
 
 type transport struct {
-	accessToken string
-	apiKey      string
+	accessToken   string
+	apiKey        string
+	apiPathPrefix string
 }
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -77,11 +76,11 @@ func NewClient(shopName string, opts ...Option) *graphql.Client {
 		Transport: transport,
 	}
 
-	url := buildAPIEndpoint(shopName)
+	url := buildAPIEndpoint(shopName, transport.apiPathPrefix)
 
 	return graphql.NewClient(url, httpClient)
 }
 
-func buildAPIEndpoint(shopName string) string {
-	return fmt.Sprintf("%s://%s.%s/%s/%s", apiProtocol, shopName, shopifyBaseDomain, apiPathPrefix, apiEndpoint)
+func buildAPIEndpoint(shopName string, apiPathPrefix string) string {
+	return fmt.Sprintf("%s://%s.%s/%s/%s", defaultAPIProtocol, shopName, shopifyBaseDomain, apiPathPrefix, defaultAPIEndpoint)
 }

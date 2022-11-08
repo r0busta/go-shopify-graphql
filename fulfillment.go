@@ -32,7 +32,7 @@ func (s *FulfillmentServiceOp) Create(fulfillment model.FulfillmentV2Input) erro
 	}
 	err := s.client.gql.Mutate(context.Background(), &m, vars)
 	if err != nil {
-		return fmt.Errorf("mutation: %s", err)
+		return fmt.Errorf("mutation: %w", err)
 	}
 
 	if len(m.FulfillmentCreateV2Result.UserErrors) > 0 {

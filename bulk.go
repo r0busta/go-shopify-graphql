@@ -66,7 +66,7 @@ func (s *BulkOperationServiceOp) PostBulkQuery(query string) (*string, error) {
 
 	err := s.client.gql.Mutate(context.Background(), &m, vars)
 	if err != nil {
-		return nil, fmt.Errorf("error posting bulk query: %s", err)
+		return nil, fmt.Errorf("error posting bulk query: %w", err)
 	}
 	if len(m.BulkOperationRunQueryResult.UserErrors) > 0 {
 		errors, _ := json.MarshalIndent(m.BulkOperationRunQueryResult.UserErrors, "", "    ")
@@ -96,7 +96,7 @@ func (s *BulkOperationServiceOp) GetCurrentBulkQueryResultURL() (*string, error)
 func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(id *string) (*string, error) {
 	q, err := s.GetCurrentBulkQuery()
 	if err != nil {
-		return nil, fmt.Errorf("error getting current bulk operation: %s", err)
+		return nil, fmt.Errorf("error getting current bulk operation: %w", err)
 	}
 
 	if id != nil && q.ID != *id {
@@ -126,7 +126,7 @@ func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(id *string) (*strin
 func (s *BulkOperationServiceOp) WaitForCurrentBulkQuery(interval time.Duration) (*model.BulkOperation, error) {
 	q, err := s.GetCurrentBulkQuery()
 	if err != nil {
-		return q, fmt.Errorf("CurrentBulkOperation query error: %s", err)
+		return q, fmt.Errorf("CurrentBulkOperation query error: %w", err)
 	}
 
 	for q.Status == model.BulkOperationStatusCreated || q.Status == model.BulkOperationStatusRunning || q.Status == model.BulkOperationStatusCanceling {
@@ -135,7 +135,7 @@ func (s *BulkOperationServiceOp) WaitForCurrentBulkQuery(interval time.Duration)
 
 		q, err = s.GetCurrentBulkQuery()
 		if err != nil {
-			return q, fmt.Errorf("CurrentBulkOperation query error: %s", err)
+			return q, fmt.Errorf("CurrentBulkOperation query error: %w", err)
 		}
 	}
 	log.Debugf("Bulk operation ready, latest status=%s", q.Status)
@@ -315,7 +315,8 @@ func parseBulkQueryResult(resultFilePath string, out interface{}) error {
 			if val, ok := edges[connectionFieldName]; ok {
 				edgesSlice = reflect.ValueOf(val)
 			} else {
-				edgesSlice = reflect.MakeSlice(reflect.SliceOf(edgeType), 0, 50)
+				edgesSliceCap := 50
+				edgesSlice = reflect.MakeSlice(reflect.SliceOf(edgeType), 0, edgesSliceCap)
 			}
 
 			edgesSlice = reflect.Append(edgesSlice, edgeVal)
