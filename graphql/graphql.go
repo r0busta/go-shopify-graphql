@@ -11,9 +11,9 @@ const (
 	shopifyBaseDomain        = "myshopify.com"
 	shopifyAccessTokenHeader = "X-Shopify-Access-Token"
 
-	defaultAPIProtocol   = "https"
-	defaultAPIEndpoint   = "graphql.json"
-	defaultAPIPathPrefix = "admin/api"
+	defaultAPIProtocol = "https"
+	defaultAPIEndpoint = "graphql.json"
+	defaultAPIBasePath = "admin/api"
 )
 
 // Option is used to configure options.
@@ -23,9 +23,7 @@ type Option func(t *transport)
 func WithVersion(apiVersion string) Option {
 	return func(t *transport) {
 		if apiVersion != "" {
-			t.apiPathPrefix = fmt.Sprintf("%s/%s", defaultAPIPathPrefix, apiVersion)
-		} else {
-			t.apiPathPrefix = defaultAPIPathPrefix
+			t.apiBasePath = fmt.Sprintf("%s/%s", defaultAPIBasePath, apiVersion)
 		}
 	}
 }
@@ -46,9 +44,9 @@ func WithPrivateAppAuth(apiKey string, accessToken string) Option {
 }
 
 type transport struct {
-	accessToken   string
-	apiKey        string
-	apiPathPrefix string
+	accessToken string
+	apiKey      string
+	apiBasePath string
 }
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -66,7 +64,9 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 // NewClient creates a new client (in fact, just a simple wrapper for a graphql.Client).
 func NewClient(shopName string, opts ...Option) *graphql.Client {
-	transport := &transport{}
+	transport := &transport{
+		apiBasePath: defaultAPIBasePath,
+	}
 
 	for _, opt := range opts {
 		opt(transport)
@@ -76,7 +76,7 @@ func NewClient(shopName string, opts ...Option) *graphql.Client {
 		Transport: transport,
 	}
 
-	url := buildAPIEndpoint(shopName, transport.apiPathPrefix)
+	url := buildAPIEndpoint(shopName, transport.apiBasePath)
 
 	return graphql.NewClient(url, httpClient)
 }

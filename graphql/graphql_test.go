@@ -1,30 +1,35 @@
 package graphqlclient
 
 import (
-	"fmt"
 	"testing"
 )
 
-func TestWithVersion(t *testing.T) {
-	_ = NewClient("myshop", WithVersion("2019-10"))
-	expected := fmt.Sprintf("admin/api/%s", "2019-10")
-	if defaultAPIPathPrefix != expected {
-		t.Errorf("WithVersion apiPathPrefix = %s, expected %s", defaultAPIPathPrefix, expected)
+func TestAPIURLWithVersion(t *testing.T) {
+	transport := &transport{}
+	WithVersion("2019-10")(transport)
+
+	expected := "admin/api/2019-10"
+	actual := transport.apiBasePath
+	if actual != expected {
+		t.Errorf("WithVersion apiBasePath = %s, expected %s", actual, expected)
 	}
 }
 
-func TestWithVersionEmptyVersion(t *testing.T) {
-	_ = NewClient("myshop", WithVersion(""))
-	expected := "admin/api"
-	if defaultAPIPathPrefix != expected {
-		t.Errorf("WithVersion apiPathPrefix = %s, expected %s", defaultAPIPathPrefix, expected)
+func TestAPIURLWithEmptyVersion(t *testing.T) {
+	transport := &transport{}
+	WithVersion("")(transport)
+
+	expected := ""
+	actual := transport.apiBasePath
+	if actual != expected {
+		t.Errorf("WithVersion apiBasePath = %s, expected %s", actual, expected)
 	}
 }
 
-func TestWithoutVersion(t *testing.T) {
-	_ = NewClient("myshop")
-	expected := "admin/api"
-	if defaultAPIPathPrefix != expected {
-		t.Errorf("WithVersion apiPathPrefix = %s, expected %s", defaultAPIPathPrefix, expected)
+func TestBuildAPIEndpoint(t *testing.T) {
+	expected := "https://store.myshopify.com/admin/api/graphql.json"
+	actual := buildAPIEndpoint("store", "admin/api")
+	if actual != expected {
+		t.Errorf("buildAPIEndpoint = %s, expected %s", actual, expected)
 	}
 }
