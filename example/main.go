@@ -3,6 +3,7 @@ package main
 func main() {
 	client := defaultClient()
 	// client := clientWithToken()
+	// client := clientWithVersion()
 
 	// Collections
 	collections(client)
