@@ -1,4 +1,4 @@
-module github.com/r0busta/go-shopify-graphql/v6
+module github.com/r0busta/go-shopify-graphql/v7
 
 go 1.19
 
@@ -14,7 +14,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/emirpasic/gods v1.18.1 // indirect
+	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
