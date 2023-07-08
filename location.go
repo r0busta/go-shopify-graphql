@@ -9,7 +9,7 @@ import (
 
 //go:generate mockgen -destination=./mock/location_service.go -package=mock . LocationService
 type LocationService interface {
-	Get(id string) (*model.Location, error)
+	Get(ctx context.Context, id string) (*model.Location, error)
 }
 
 type LocationServiceOp struct {
@@ -18,7 +18,7 @@ type LocationServiceOp struct {
 
 var _ LocationService = &LocationServiceOp{}
 
-func (s *LocationServiceOp) Get(id string) (*model.Location, error) {
+func (s *LocationServiceOp) Get(ctx context.Context, id string) (*model.Location, error) {
 	q := `query location($id: ID!) {
 		location(id: $id){
 			id
@@ -33,7 +33,7 @@ func (s *LocationServiceOp) Get(id string) (*model.Location, error) {
 	var out struct {
 		*model.Location `json:"location"`
 	}
-	err := s.client.gql.QueryString(context.Background(), q, vars, &out)
+	err := s.client.gql.QueryString(ctx, q, vars, &out)
 	if err != nil {
 		return nil, fmt.Errorf("query: %w", err)
 	}

@@ -9,9 +9,9 @@ import (
 
 //go:generate mockgen -destination=./mock/inventory_service.go -package=mock . InventoryService
 type InventoryService interface {
-	Update(id string, input model.InventoryItemUpdateInput) error
-	Adjust(locationID string, input []model.InventoryAdjustItemInput) error
-	ActivateInventory(locationID string, id string) error
+	Update(ctx context.Context, id string, input model.InventoryItemUpdateInput) error
+	Adjust(ctx context.Context, locationID string, input []model.InventoryAdjustItemInput) error
+	ActivateInventory(ctx context.Context, locationID string, id string) error
 }
 
 type InventoryServiceOp struct {
@@ -38,13 +38,13 @@ type mutationInventoryActivate struct {
 	} `graphql:"inventoryActivate(inventoryItemId: $itemID, locationId: $locationId)" json:"inventoryActivate"`
 }
 
-func (s *InventoryServiceOp) Update(id string, input model.InventoryItemUpdateInput) error {
+func (s *InventoryServiceOp) Update(ctx context.Context, id string, input model.InventoryItemUpdateInput) error {
 	m := mutationInventoryItemUpdate{}
 	vars := map[string]interface{}{
 		"id":    id,
 		"input": input,
 	}
-	err := s.client.gql.Mutate(context.Background(), &m, vars)
+	err := s.client.gql.Mutate(ctx, &m, vars)
 	if err != nil {
 		return fmt.Errorf("mutation: %w", err)
 	}
@@ -56,13 +56,13 @@ func (s *InventoryServiceOp) Update(id string, input model.InventoryItemUpdateIn
 	return nil
 }
 
-func (s *InventoryServiceOp) Adjust(locationID string, input []model.InventoryAdjustItemInput) error {
+func (s *InventoryServiceOp) Adjust(ctx context.Context, locationID string, input []model.InventoryAdjustItemInput) error {
 	m := mutationInventoryBulkAdjustQuantityAtLocation{}
 	vars := map[string]interface{}{
 		"locationId":               locationID,
 		"inventoryItemAdjustments": input,
 	}
-	err := s.client.gql.Mutate(context.Background(), &m, vars)
+	err := s.client.gql.Mutate(ctx, &m, vars)
 	if err != nil {
 		return fmt.Errorf("mutation: %w", err)
 	}
@@ -74,13 +74,13 @@ func (s *InventoryServiceOp) Adjust(locationID string, input []model.InventoryAd
 	return nil
 }
 
-func (s *InventoryServiceOp) ActivateInventory(locationID string, id string) error {
+func (s *InventoryServiceOp) ActivateInventory(ctx context.Context, locationID string, id string) error {
 	m := mutationInventoryActivate{}
 	vars := map[string]interface{}{
 		"itemID":     id,
 		"locationId": locationID,
 	}
-	err := s.client.gql.Mutate(context.Background(), &m, vars)
+	err := s.client.gql.Mutate(ctx, &m, vars)
 	if err != nil {
 		return fmt.Errorf("mutation: %w", err)
 	}

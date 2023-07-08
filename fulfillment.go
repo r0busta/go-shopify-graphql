@@ -9,7 +9,7 @@ import (
 
 //go:generate mockgen -destination=./mock/fulfillment_service.go -package=mock . FulfillmentService
 type FulfillmentService interface {
-	Create(input model.FulfillmentV2Input) error
+	Create(ctx context.Context, input model.FulfillmentV2Input) error
 }
 
 type FulfillmentServiceOp struct {
@@ -24,13 +24,13 @@ type mutationFulfillmentCreateV2 struct {
 	} `graphql:"fulfillmentCreateV2(fulfillment: $fulfillment)" json:"fulfillmentCreateV2"`
 }
 
-func (s *FulfillmentServiceOp) Create(fulfillment model.FulfillmentV2Input) error {
+func (s *FulfillmentServiceOp) Create(ctx context.Context, fulfillment model.FulfillmentV2Input) error {
 	m := mutationFulfillmentCreateV2{}
 
 	vars := map[string]interface{}{
 		"fulfillment": fulfillment,
 	}
-	err := s.client.gql.Mutate(context.Background(), &m, vars)
+	err := s.client.gql.Mutate(ctx, &m, vars)
 	if err != nil {
 		return fmt.Errorf("mutation: %w", err)
 	}

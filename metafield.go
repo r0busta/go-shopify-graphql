@@ -11,13 +11,13 @@ import (
 
 //go:generate mockgen -destination=./mock/metafield_service.go -package=mock . MetafieldService
 type MetafieldService interface {
-	ListAllShopMetafields() ([]model.Metafield, error)
-	ListShopMetafieldsByNamespace(namespace string) ([]model.Metafield, error)
+	ListAllShopMetafields(ctx context.Context) ([]model.Metafield, error)
+	ListShopMetafieldsByNamespace(ctx context.Context, namespace string) ([]model.Metafield, error)
 
-	GetShopMetafieldByKey(namespace, key string) (*model.Metafield, error)
+	GetShopMetafieldByKey(ctx context.Context, namespace, key string) (*model.Metafield, error)
 
-	Delete(metafield model.MetafieldDeleteInput) error
-	DeleteBulk(metafield []model.MetafieldDeleteInput) error
+	Delete(ctx context.Context, metafield model.MetafieldDeleteInput) error
+	DeleteBulk(ctx context.Context, metafield []model.MetafieldDeleteInput) error
 }
 
 type MetafieldServiceOp struct {
@@ -32,7 +32,7 @@ type mutationMetafieldDelete struct {
 	} `graphql:"metafieldDelete(input: $input)" json:"metafieldDelete"`
 }
 
-func (s *MetafieldServiceOp) ListAllShopMetafields() ([]model.Metafield, error) {
+func (s *MetafieldServiceOp) ListAllShopMetafields(ctx context.Context) ([]model.Metafield, error) {
 	q := `
 		{
 			shop{
@@ -57,7 +57,7 @@ func (s *MetafieldServiceOp) ListAllShopMetafields() ([]model.Metafield, error) 
 `
 
 	res := []model.Metafield{}
-	err := s.client.BulkOperation.BulkQuery(q, &res)
+	err := s.client.BulkOperation.BulkQuery(ctx, q, &res)
 	if err != nil {
 		return nil, fmt.Errorf("bulk query: %w", err)
 	}
@@ -65,7 +65,7 @@ func (s *MetafieldServiceOp) ListAllShopMetafields() ([]model.Metafield, error) 
 	return res, nil
 }
 
-func (s *MetafieldServiceOp) ListShopMetafieldsByNamespace(namespace string) ([]model.Metafield, error) {
+func (s *MetafieldServiceOp) ListShopMetafieldsByNamespace(ctx context.Context, namespace string) ([]model.Metafield, error) {
 	q := `
 		{
 			shop{
@@ -91,7 +91,7 @@ func (s *MetafieldServiceOp) ListShopMetafieldsByNamespace(namespace string) ([]
 	q = strings.ReplaceAll(q, "$namespace", namespace)
 
 	res := []model.Metafield{}
-	err := s.client.BulkOperation.BulkQuery(q, &res)
+	err := s.client.BulkOperation.BulkQuery(ctx, q, &res)
 	if err != nil {
 		return nil, fmt.Errorf("bulk query: %w", err)
 	}
@@ -99,7 +99,7 @@ func (s *MetafieldServiceOp) ListShopMetafieldsByNamespace(namespace string) ([]
 	return res, nil
 }
 
-func (s *MetafieldServiceOp) GetShopMetafieldByKey(namespace, key string) (*model.Metafield, error) {
+func (s *MetafieldServiceOp) GetShopMetafieldByKey(ctx context.Context, namespace, key string) (*model.Metafield, error) {
 	var q struct {
 		Shop struct {
 			Metafield model.Metafield `graphql:"metafield(namespace: $namespace, key: $key)"`
@@ -110,7 +110,7 @@ func (s *MetafieldServiceOp) GetShopMetafieldByKey(namespace, key string) (*mode
 		"key":       key,
 	}
 
-	err := s.client.gql.Query(context.Background(), &q, vars)
+	err := s.client.gql.Query(ctx, &q, vars)
 	if err != nil {
 		return nil, fmt.Errorf("query: %w", err)
 	}
@@ -118,9 +118,9 @@ func (s *MetafieldServiceOp) GetShopMetafieldByKey(namespace, key string) (*mode
 	return &q.Shop.Metafield, nil
 }
 
-func (s *MetafieldServiceOp) DeleteBulk(metafields []model.MetafieldDeleteInput) error {
+func (s *MetafieldServiceOp) DeleteBulk(ctx context.Context, metafields []model.MetafieldDeleteInput) error {
 	for _, m := range metafields {
-		err := s.Delete(m)
+		err := s.Delete(ctx, m)
 		if err != nil {
 			log.Warnf("Couldn't delete metafield (%v): %s", m, err)
 		}
@@ -129,13 +129,13 @@ func (s *MetafieldServiceOp) DeleteBulk(metafields []model.MetafieldDeleteInput)
 	return nil
 }
 
-func (s *MetafieldServiceOp) Delete(metafield model.MetafieldDeleteInput) error {
+func (s *MetafieldServiceOp) Delete(ctx context.Context, metafield model.MetafieldDeleteInput) error {
 	m := mutationMetafieldDelete{}
 
 	vars := map[string]interface{}{
 		"input": metafield,
 	}
-	err := s.client.gql.Mutate(context.Background(), &m, vars)
+	err := s.client.gql.Mutate(ctx, &m, vars)
 	if err != nil {
 		return fmt.Errorf("mutation: %w", err)
 	}

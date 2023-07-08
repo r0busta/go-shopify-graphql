@@ -1,10 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/r0busta/go-shopify-graphql-model/v3/graph/model"
-	shopify "github.com/r0busta/go-shopify-graphql/v7"
+	"github.com/r0busta/go-shopify-graphql/v7"
 )
 
 func bulk(client *shopify.Client) {
@@ -39,7 +40,7 @@ func bulk(client *shopify.Client) {
 	}`
 
 	products := []*model.Product{}
-	err := client.BulkOperation.BulkQuery(q, &products)
+	err := client.BulkOperation.BulkQuery(context.Background(), q, &products)
 	if err != nil {
 		panic(err)
 	}
