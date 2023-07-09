@@ -11,14 +11,14 @@ import (
 
 //go:generate mockgen -destination=./mock/order_service.go -package=mock . OrderService
 type OrderService interface {
-	Get(id graphql.ID) (*model.Order, error)
+	Get(ctx context.Context, id graphql.ID) (*model.Order, error)
 
-	List(opts ListOptions) ([]model.Order, error)
-	ListAll() ([]model.Order, error)
+	List(ctx context.Context, opts ListOptions) ([]model.Order, error)
+	ListAll(ctx context.Context) ([]model.Order, error)
 
-	ListAfterCursor(opts ListOptions) ([]model.Order, *string, *string, error)
+	ListAfterCursor(ctx context.Context, opts ListOptions) ([]model.Order, *string, *string, error)
 
-	Update(input model.OrderInput) error
+	Update(ctx context.Context, input model.OrderInput) error
 }
 
 type OrderServiceOp struct {
@@ -218,7 +218,7 @@ fragment lineItem on LineItem {
 }
 `
 
-func (s *OrderServiceOp) Get(id graphql.ID) (*model.Order, error) {
+func (s *OrderServiceOp) Get(ctx context.Context, id graphql.ID) (*model.Order, error) {
 	q := fmt.Sprintf(`
 		query order($id: ID!) {
 			node(id: $id){
@@ -265,7 +265,7 @@ func (s *OrderServiceOp) Get(id graphql.ID) (*model.Order, error) {
 	out := struct {
 		Order *model.Order `json:"node"`
 	}{}
-	err := s.client.gql.QueryString(context.Background(), q, vars, &out)
+	err := s.client.gql.QueryString(ctx, q, vars, &out)
 	if err != nil {
 		return nil, fmt.Errorf("query: %w", err)
 	}
@@ -273,7 +273,7 @@ func (s *OrderServiceOp) Get(id graphql.ID) (*model.Order, error) {
 	return out.Order, nil
 }
 
-func (s *OrderServiceOp) List(opts ListOptions) ([]model.Order, error) {
+func (s *OrderServiceOp) List(ctx context.Context, opts ListOptions) ([]model.Order, error) {
 	q := fmt.Sprintf(`
 		{
 			orders(query: "$query"){
@@ -298,7 +298,7 @@ func (s *OrderServiceOp) List(opts ListOptions) ([]model.Order, error) {
 	q = strings.ReplaceAll(q, "$query", opts.Query)
 
 	res := []model.Order{}
-	err := s.client.BulkOperation.BulkQuery(q, &res)
+	err := s.client.BulkOperation.BulkQuery(ctx, q, &res)
 	if err != nil {
 		return nil, fmt.Errorf("bulk query: %w", err)
 	}
@@ -306,7 +306,7 @@ func (s *OrderServiceOp) List(opts ListOptions) ([]model.Order, error) {
 	return res, nil
 }
 
-func (s *OrderServiceOp) ListAll() ([]model.Order, error) {
+func (s *OrderServiceOp) ListAll(ctx context.Context) ([]model.Order, error) {
 	q := fmt.Sprintf(`
 		{
 			orders(query: "$query"){
@@ -329,7 +329,7 @@ func (s *OrderServiceOp) ListAll() ([]model.Order, error) {
 	`, orderBaseQuery, lineItemFragment)
 
 	res := []model.Order{}
-	err := s.client.BulkOperation.BulkQuery(q, &res)
+	err := s.client.BulkOperation.BulkQuery(ctx, q, &res)
 	if err != nil {
 		return nil, fmt.Errorf("bulk query: %w", err)
 	}
@@ -337,7 +337,7 @@ func (s *OrderServiceOp) ListAll() ([]model.Order, error) {
 	return res, nil
 }
 
-func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]model.Order, *string, *string, error) {
+func (s *OrderServiceOp) ListAfterCursor(ctx context.Context, opts ListOptions) ([]model.Order, *string, *string, error) {
 	q := fmt.Sprintf(`
 		query orders($query: String, $first: Int, $last: Int, $before: String, $after: String, $reverse: Boolean) {
 			orders(query: $query, first: $first, last: $last, before: $before, after: $after, reverse: $reverse){
@@ -392,7 +392,7 @@ func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]model.Order, *stri
 			} `json:"pageInfo,omitempty"`
 		} `json:"orders,omitempty"`
 	}{}
-	err := s.client.gql.QueryString(context.Background(), q, vars, &out)
+	err := s.client.gql.QueryString(ctx, q, vars, &out)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("query: %w", err)
 	}
@@ -411,13 +411,13 @@ func (s *OrderServiceOp) ListAfterCursor(opts ListOptions) ([]model.Order, *stri
 	return res, firstCursor, lastCursor, nil
 }
 
-func (s *OrderServiceOp) Update(input model.OrderInput) error {
+func (s *OrderServiceOp) Update(ctx context.Context, input model.OrderInput) error {
 	m := mutationOrderUpdate{}
 
 	vars := map[string]interface{}{
 		"input": input,
 	}
-	err := s.client.gql.Mutate(context.Background(), &m, vars)
+	err := s.client.gql.Mutate(ctx, &m, vars)
 	if err != nil {
 		return fmt.Errorf("mutation: %w", err)
 	}

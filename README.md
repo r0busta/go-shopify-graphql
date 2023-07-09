@@ -20,25 +20,26 @@ export STORE_NAME=<store_name>
 package main
 
 import (
-    "fmt"
+	"context"
+	"fmt"
 
-    shopify "github.com/r0busta/go-shopify-graphql/v7"
+	shopify "github.com/r0busta/go-shopify-graphql/v7"
 )
 
 func main() {
-    // Create client
-    client := shopify.NewDefaultClient()
+	// Create client
+	client := shopify.NewDefaultClient()
 
-    // Get all collections
-    collections, err := client.Collection.ListAll()
-    if err != nil {
-        panic(err)
-    }
+	// Get all collections
+	collections, err := client.Collection.ListAll(context.Background())
+	if err != nil {
+		panic(err)
+	}
 
-    // Print out the result
-    for _, c := range collections {
-        fmt.Println(c.Handle)
-    }
+	// Print out the result
+	for _, c := range collections {
+		fmt.Println(c.Handle)
+	}
 }
 ```
 

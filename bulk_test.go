@@ -1,6 +1,7 @@
 package shopify_test
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -60,7 +61,7 @@ func TestBulkOperationEndToEnd(t *testing.T) {
 			}`
 
 			res := []*model.Product{}
-			err := tt.client.BulkOperation.BulkQuery(q, &res)
+			err := tt.client.BulkOperation.BulkQuery(context.Background(), q, &res)
 			require.NoError(t, err)
 
 			assert.Greater(t, len(res), 1)

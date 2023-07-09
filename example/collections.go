@@ -1,14 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
-	shopify "github.com/r0busta/go-shopify-graphql/v7"
+	"github.com/r0busta/go-shopify-graphql/v7"
 )
 
 func collections(client *shopify.Client) {
 	// Get all collections
-	collections, err := client.Collection.ListAll()
+	collections, err := client.Collection.ListAll(context.Background())
 	if err != nil {
 		panic(err)
 	}
