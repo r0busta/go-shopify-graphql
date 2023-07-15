@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/r0busta/go-shopify-graphql-model/v3/graph/model"
-	"github.com/r0busta/go-shopify-graphql/v7"
+	"github.com/r0busta/go-shopify-graphql/v8"
 )
 
 func bulk(client *shopify.Client) {
