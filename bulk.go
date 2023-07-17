@@ -104,7 +104,7 @@ func (s *BulkOperationServiceOp) ShouldGetBulkQueryResultURL(ctx context.Context
 	}
 
 	q, _ = s.WaitForCurrentBulkQuery(ctx, 1*time.Second)
-	if q.Status != "COMPLETED" {
+	if q.Status != model.BulkOperationStatusCompleted {
 		return nil, fmt.Errorf("Bulk operation didn't complete, status=%s, error_code=%s", q.Status, q.ErrorCode)
 	}
 
@@ -209,6 +209,7 @@ func (s *BulkOperationServiceOp) BulkQuery(ctx context.Context, query string, ou
 
 	filename := fmt.Sprintf("%s%s", rand.String(10), ".jsonl")
 	resultFile := filepath.Join(os.TempDir(), filename)
+	defer os.Remove(resultFile) // Avoid storage overflow in high traffic environments
 	err = utils.DownloadFile(resultFile, *url)
 	if err != nil {
 		return fmt.Errorf("download file: %w", err)
@@ -378,6 +379,9 @@ func attachNestedConnections(connectionSink map[string]interface{}, outSlice ref
 		if parentIDField == (reflect.Value{}) {
 			return fmt.Errorf("No ID field on the first level")
 		}
+		if reflect.TypeOf(parentIDField).Kind() == reflect.Ptr {
+			parentIDField = parentIDField.Elem()
+		}
 
 		var parentID string
 		var ok bool
@@ -443,6 +447,12 @@ func concludeObjectType(gid string) (reflect.Type, reflect.Type, string, error) 
 		return reflect.TypeOf(model.FulfillmentOrderEdge{}), reflect.TypeOf(&model.FulfillmentOrder{}), fmt.Sprintf("%ss", resource), nil
 	case "MediaImage":
 		return reflect.TypeOf(model.MediaEdge{}), reflect.TypeOf(&model.MediaImage{}), "Media", nil
+	case "Video":
+		return reflect.TypeOf(model.MediaEdge{}), reflect.TypeOf(&model.Video{}), "Media", nil
+	case "Model3d":
+		return reflect.TypeOf(model.MediaEdge{}), reflect.TypeOf(&model.Model3d{}), "Media", nil
+	case "ExternalVideo":
+		return reflect.TypeOf(model.MediaEdge{}), reflect.TypeOf(&model.ExternalVideo{}), "Media", nil
 	case "Metafield":
 		return reflect.TypeOf(model.MetafieldEdge{}), reflect.TypeOf(&model.Metafield{}), fmt.Sprintf("%ss", resource), nil
 	case "Order":
@@ -451,6 +461,8 @@ func concludeObjectType(gid string) (reflect.Type, reflect.Type, string, error) 
 		return reflect.TypeOf(model.ProductEdge{}), reflect.TypeOf(&model.Product{}), fmt.Sprintf("%ss", resource), nil
 	case "ProductVariant":
 		return reflect.TypeOf(model.ProductVariantEdge{}), reflect.TypeOf(&model.ProductVariant{}), "Variants", nil
+	case "ProductImage":
+		return reflect.TypeOf(model.ImageEdge{}), reflect.TypeOf(&model.Image{}), "Images", nil
 	case "Collection":
 		return reflect.TypeOf(model.CollectionEdge{}), reflect.TypeOf(&model.Collection{}), "Collections", nil
 	default:
