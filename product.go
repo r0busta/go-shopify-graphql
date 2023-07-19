@@ -117,7 +117,7 @@ const productBaseQuery = `
 
 var productQuery = fmt.Sprintf(`
 	%s
-	variants(first:250, after: $cursor){
+	variants(first:100, after: $cursor){
 		edges{
 			node{
 				id
