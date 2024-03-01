@@ -55,7 +55,7 @@ type mutationBulkOperationRunQueryCancel struct {
 var gidRegex *regexp.Regexp
 
 func init() {
-	gidRegex = regexp.MustCompile(`^gid://shopify/(\w+)/\d+$`)
+	gidRegex = regexp.MustCompile(`^gid://shopify/(\w+)/\d+`)
 }
 
 func (s *BulkOperationServiceOp) PostBulkQuery(ctx context.Context, query string) (*string, error) {
@@ -465,6 +465,8 @@ func concludeObjectType(gid string) (reflect.Type, reflect.Type, string, error) 
 		return reflect.TypeOf(model.ImageEdge{}), reflect.TypeOf(&model.Image{}), "Images", nil
 	case "Collection":
 		return reflect.TypeOf(model.CollectionEdge{}), reflect.TypeOf(&model.Collection{}), "Collections", nil
+	case "InventoryLevel":
+		return reflect.TypeOf(model.InventoryLevelEdge{}), reflect.TypeOf(&model.InventoryLevel{}), fmt.Sprintf("%ss", resource), nil
 	default:
 		return reflect.TypeOf(nil), reflect.TypeOf(nil), "", fmt.Errorf("`%s` not implemented type", resource)
 	}
