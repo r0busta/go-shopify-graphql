@@ -11,6 +11,8 @@ import (
 type InventoryService interface {
 	Update(ctx context.Context, id string, input model.InventoryItemUpdateInput) error
 	Adjust(ctx context.Context, locationID string, input []model.InventoryAdjustItemInput) error
+	AdjustQuantities(ctx context.Context, reason, name string, referenceDocumentUri *string, changes []model.InventoryChangeInput) error
+	SetOnHandQuantities(ctx context.Context, reason string, referenceDocumentUri *string, setQuantities []model.InventorySetQuantityInput) error
 	ActivateInventory(ctx context.Context, locationID string, id string) error
 }
 
@@ -36,6 +38,18 @@ type mutationInventoryActivate struct {
 	InventoryActivateResult struct {
 		UserErrors []model.UserError `json:"userErrors,omitempty"`
 	} `graphql:"inventoryActivate(inventoryItemId: $itemID, locationId: $locationId)" json:"inventoryActivate"`
+}
+
+type mutationInventoryAdjustQuantities struct {
+	InventoryAdjustQuantitiesResult struct {
+		UserErrors []model.UserError `json:"userErrors,omitempty"`
+	} `graphql:"inventoryAdjustQuantities(input: $input)" json:"inventoryAdjustQuantities"`
+}
+
+type mutationInventorySetOnHandQuantities struct {
+	InventorySetOnHandQuantitiesResult struct {
+		UserErrors []model.UserError `json:"userErrors,omitempty"`
+	} `graphql:"inventorySetOnHandQuantities(input: $input)" json:"inventorySetOnHandQuantities"`
 }
 
 func (s *InventoryServiceOp) Update(ctx context.Context, id string, input model.InventoryItemUpdateInput) error {
@@ -69,6 +83,49 @@ func (s *InventoryServiceOp) Adjust(ctx context.Context, locationID string, inpu
 
 	if len(m.InventoryBulkAdjustQuantityAtLocationResult.UserErrors) > 0 {
 		return fmt.Errorf("%+v", m.InventoryBulkAdjustQuantityAtLocationResult.UserErrors)
+	}
+
+	return nil
+}
+
+func (s *InventoryServiceOp) AdjustQuantities(ctx context.Context, reason, name string, referenceDocumentUri *string, changes []model.InventoryChangeInput) error {
+	m := mutationInventoryAdjustQuantities{}
+	vars := map[string]interface{}{
+		"input": model.InventoryAdjustQuantitiesInput{
+			Name:                 name,
+			Reason:               reason,
+			ReferenceDocumentURI: referenceDocumentUri,
+			Changes:              changes,
+		},
+	}
+	err := s.client.gql.Mutate(ctx, &m, vars)
+	if err != nil {
+		return fmt.Errorf("mutation: %w", err)
+	}
+
+	if len(m.InventoryAdjustQuantitiesResult.UserErrors) > 0 {
+		return fmt.Errorf("%+v", m.InventoryAdjustQuantitiesResult.UserErrors)
+	}
+
+	return nil
+}
+
+func (s *InventoryServiceOp) SetOnHandQuantities(ctx context.Context, reason string, referenceDocumentUri *string, setQuantities []model.InventorySetQuantityInput) error {
+	m := mutationInventorySetOnHandQuantities{}
+	vars := map[string]interface{}{
+		"input": model.InventorySetOnHandQuantitiesInput{
+			Reason:               reason,
+			ReferenceDocumentURI: referenceDocumentUri,
+			SetQuantities:        setQuantities,
+		},
+	}
+	err := s.client.gql.Mutate(ctx, &m, vars)
+	if err != nil {
+		return fmt.Errorf("mutation: %w", err)
+	}
+
+	if len(m.InventorySetOnHandQuantitiesResult.UserErrors) > 0 {
+		return fmt.Errorf("%+v", m.InventorySetOnHandQuantitiesResult.UserErrors)
 	}
 
 	return nil
