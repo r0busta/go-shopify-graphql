@@ -24,6 +24,8 @@ type ProductService interface {
 	VariantsBulkCreate(ctx context.Context, id string, input []model.ProductVariantsBulkInput) error
 	VariantsBulkUpdate(ctx context.Context, id string, input []model.ProductVariantsBulkInput) error
 	VariantsBulkReorder(ctx context.Context, id string, input []model.ProductVariantPositionInput) error
+
+	CreateMedia(ctx context.Context, productID string, media []model.CreateMediaInput) error
 }
 
 type ProductServiceOp struct {
@@ -70,6 +72,12 @@ type mutationProductVariantsBulkReorder struct {
 	ProductVariantsBulkReorderResult struct {
 		UserErrors []model.UserError `json:"userErrors,omitempty"`
 	} `graphql:"productVariantsBulkReorder(positions: $positions, productId: $productId)" json:"productVariantsBulkReorder"`
+}
+
+type mutationProductCreateMedia struct {
+	ProductCreateMediaResult struct {
+		MediaUserErrors []model.UserError `json:"mediaUserErrors,omitempty"`
+	} `graphql:"productCreateMedia(productId: $productId, media: $media)" json:"productCreateMedia"`
 }
 
 const productBaseQuery = `
@@ -401,6 +409,26 @@ func (s *ProductServiceOp) VariantsBulkReorder(ctx context.Context, id string, i
 
 	if len(m.ProductVariantsBulkReorderResult.UserErrors) > 0 {
 		return fmt.Errorf("%+v", m.ProductVariantsBulkReorderResult.UserErrors)
+	}
+
+	return nil
+}
+
+func (s *ProductServiceOp) CreateMedia(ctx context.Context, productId string, media []model.CreateMediaInput) error {
+	m := mutationProductCreateMedia{}
+
+	vars := map[string]interface{}{
+		"productId": productId,
+		"media":     media,
+	}
+
+	err := s.client.gql.Mutate(ctx, &m, vars)
+	if err != nil {
+		return fmt.Errorf("mutation: %w", err)
+	}
+
+	if len(m.ProductCreateMediaResult.MediaUserErrors) > 0 {
+		return fmt.Errorf("%+v", m.ProductCreateMediaResult.MediaUserErrors)
 	}
 
 	return nil
