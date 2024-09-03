@@ -25,7 +25,6 @@ type ProductService interface {
 	VariantsBulkUpdate(ctx context.Context, id string, input []model.ProductVariantsBulkInput) error
 	VariantsBulkReorder(ctx context.Context, id string, input []model.ProductVariantPositionInput) error
 
-	CreateMedia(ctx context.Context, productID string, media []model.CreateMediaInput) error
 	CreateMedia(ctx context.Context, id string, input []model.CreateMediaInput) error
 }
 
