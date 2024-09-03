@@ -25,7 +25,7 @@ type ProductService interface {
 	VariantsBulkUpdate(ctx context.Context, id string, input []model.ProductVariantsBulkInput) error
 	VariantsBulkReorder(ctx context.Context, id string, input []model.ProductVariantPositionInput) error
 
-	CreateMedia(ctx context.Context, id string, input []model.CreateMediaInput) error
+	MediaCreate(ctx context.Context, id string, input []model.CreateMediaInput) error
 }
 
 type ProductServiceOp struct {
@@ -414,7 +414,7 @@ func (s *ProductServiceOp) VariantsBulkReorder(ctx context.Context, id string, i
 	return nil
 }
 
-func (s *ProductServiceOp) CreateMedia(ctx context.Context, id string, input []model.CreateMediaInput) error {
+func (s *ProductServiceOp) MediaCreate(ctx context.Context, id string, input []model.CreateMediaInput) error {
 	m := mutationProductCreateMedia{}
 
 	vars := map[string]interface{}{
