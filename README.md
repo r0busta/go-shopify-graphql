@@ -23,7 +23,7 @@ import (
 	"context"
 	"fmt"
 
-	shopify "github.com/r0busta/go-shopify-graphql/v8"
+	shopify "github.com/r0busta/go-shopify-graphql/v9"
 )
 
 func main() {
