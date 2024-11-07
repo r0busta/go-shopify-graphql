@@ -20,3 +20,4 @@ test
 *.local
 .vscode
 .idea
+.env
