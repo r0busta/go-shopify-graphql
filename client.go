@@ -9,14 +9,13 @@ import (
 )
 
 const (
-	defaultShopifyAPIVersion = "2022-04"
+	defaultShopifyAPIVersion = "2025-01"
 )
 
 type Client struct {
 	gql graphql.GraphQL
 
 	Product       ProductService
-	Variant       VariantService
 	Inventory     InventoryService
 	Collection    CollectionService
 	Order         OrderService
@@ -46,7 +45,6 @@ func NewClient(opts ...Option) *Client {
 	}
 
 	c.Product = &ProductServiceOp{client: c}
-	c.Variant = &VariantServiceOp{client: c}
 	c.Inventory = &InventoryServiceOp{client: c}
 	c.Collection = &CollectionServiceOp{client: c}
 	c.Order = &OrderServiceOp{client: c}

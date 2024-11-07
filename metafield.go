@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/r0busta/go-shopify-graphql-model/v3/graph/model"
+	"github.com/r0busta/go-shopify-graphql-model/v4/graph/model"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,8 +16,8 @@ type MetafieldService interface {
 
 	GetShopMetafieldByKey(ctx context.Context, namespace, key string) (*model.Metafield, error)
 
-	Delete(ctx context.Context, metafield model.MetafieldDeleteInput) error
-	DeleteBulk(ctx context.Context, metafield []model.MetafieldDeleteInput) error
+	Delete(ctx context.Context, metafield model.MetafieldIdentifierInput) error
+	DeleteBulk(ctx context.Context, metafield []model.MetafieldIdentifierInput) error
 }
 
 type MetafieldServiceOp struct {
@@ -118,7 +118,7 @@ func (s *MetafieldServiceOp) GetShopMetafieldByKey(ctx context.Context, namespac
 	return &q.Shop.Metafield, nil
 }
 
-func (s *MetafieldServiceOp) DeleteBulk(ctx context.Context, metafields []model.MetafieldDeleteInput) error {
+func (s *MetafieldServiceOp) DeleteBulk(ctx context.Context, metafields []model.MetafieldIdentifierInput) error {
 	for _, m := range metafields {
 		err := s.Delete(ctx, m)
 		if err != nil {
@@ -129,7 +129,7 @@ func (s *MetafieldServiceOp) DeleteBulk(ctx context.Context, metafields []model.
 	return nil
 }
 
-func (s *MetafieldServiceOp) Delete(ctx context.Context, metafield model.MetafieldDeleteInput) error {
+func (s *MetafieldServiceOp) Delete(ctx context.Context, metafield model.MetafieldIdentifierInput) error {
 	m := mutationMetafieldDelete{}
 
 	vars := map[string]interface{}{

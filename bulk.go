@@ -14,7 +14,7 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/r0busta/go-shopify-graphql-model/v3/graph/model"
+	"github.com/r0busta/go-shopify-graphql-model/v4/graph/model"
 	"github.com/r0busta/go-shopify-graphql/v8/rand"
 	"github.com/r0busta/go-shopify-graphql/v8/utils"
 	log "github.com/sirupsen/logrus"

@@ -10,7 +10,7 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/r0busta/go-shopify-graphql-model/v3/graph/model"
+	model "github.com/r0busta/go-shopify-graphql-model/v4/graph/model"
 )
 
 // MockBulkOperationService is a mock of BulkOperationService interface.

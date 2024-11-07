@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/r0busta/go-shopify-graphql-model/v3/graph/model"
+	model "github.com/r0busta/go-shopify-graphql-model/v4/graph/model"
 )
 
 // MockInventoryService is a mock of InventoryService interface.
@@ -50,7 +50,7 @@ func (mr *MockInventoryServiceMockRecorder) ActivateInventory(arg0, arg1, arg2 i
 }
 
 // Adjust mocks base method.
-func (m *MockInventoryService) Adjust(arg0 context.Context, arg1 string, arg2 []model.InventoryAdjustItemInput) error {
+func (m *MockInventoryService) Adjust(arg0 context.Context, arg1 string, arg2 []model.InventoryAdjustQuantitiesInput) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Adjust", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
@@ -63,8 +63,36 @@ func (mr *MockInventoryServiceMockRecorder) Adjust(arg0, arg1, arg2 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Adjust", reflect.TypeOf((*MockInventoryService)(nil).Adjust), arg0, arg1, arg2)
 }
 
+// AdjustQuantities mocks base method.
+func (m *MockInventoryService) AdjustQuantities(arg0 context.Context, arg1, arg2 string, arg3 *string, arg4 []model.InventoryChangeInput) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AdjustQuantities", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AdjustQuantities indicates an expected call of AdjustQuantities.
+func (mr *MockInventoryServiceMockRecorder) AdjustQuantities(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AdjustQuantities", reflect.TypeOf((*MockInventoryService)(nil).AdjustQuantities), arg0, arg1, arg2, arg3, arg4)
+}
+
+// SetOnHandQuantities mocks base method.
+func (m *MockInventoryService) SetOnHandQuantities(arg0 context.Context, arg1 string, arg2 *string, arg3 []model.InventorySetQuantityInput) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetOnHandQuantities", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetOnHandQuantities indicates an expected call of SetOnHandQuantities.
+func (mr *MockInventoryServiceMockRecorder) SetOnHandQuantities(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetOnHandQuantities", reflect.TypeOf((*MockInventoryService)(nil).SetOnHandQuantities), arg0, arg1, arg2, arg3)
+}
+
 // Update mocks base method.
-func (m *MockInventoryService) Update(arg0 context.Context, arg1 string, arg2 model.InventoryItemUpdateInput) error {
+func (m *MockInventoryService) Update(arg0 context.Context, arg1 string, arg2 model.InventoryItemInput) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)

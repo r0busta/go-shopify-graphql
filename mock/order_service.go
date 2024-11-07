@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/r0busta/go-shopify-graphql-model/v3/graph/model"
+	model "github.com/r0busta/go-shopify-graphql-model/v4/graph/model"
 	shopify "github.com/r0busta/go-shopify-graphql/v8"
 	graphql "github.com/r0busta/graphql"
 )
