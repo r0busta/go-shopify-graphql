@@ -15,13 +15,13 @@ type ProductService interface {
 
 	Get(ctx context.Context, id string) (*model.Product, error)
 
-	Create(ctx context.Context, product model.ProductInput) (*string, error)
+	Create(ctx context.Context, product model.ProductCreateInput, media []model.CreateMediaInput) (*string, error)
 
-	Update(ctx context.Context, product model.ProductInput) error
+	Update(ctx context.Context, product model.ProductUpdateInput, media []model.CreateMediaInput) error
 
 	Delete(ctx context.Context, product model.ProductDeleteInput) error
 
-	VariantsBulkCreate(ctx context.Context, id string, input []model.ProductVariantsBulkInput) error
+	VariantsBulkCreate(ctx context.Context, id string, input []model.ProductVariantsBulkInput, strategy model.ProductVariantsBulkCreateStrategy) error
 	VariantsBulkUpdate(ctx context.Context, id string, input []model.ProductVariantsBulkInput) error
 	VariantsBulkReorder(ctx context.Context, id string, input []model.ProductVariantPositionInput) error
 }
@@ -39,13 +39,13 @@ type mutationProductCreate struct {
 		} `json:"product,omitempty"`
 
 		UserErrors []model.UserError `json:"userErrors,omitempty"`
-	} `graphql:"productCreate(input: $input)" json:"productCreate"`
+	} `graphql:"productCreate(product: $product, media: $media)" json:"productCreate"`
 }
 
 type mutationProductUpdate struct {
 	ProductUpdateResult struct {
 		UserErrors []model.UserError `json:"userErrors,omitempty"`
-	} `graphql:"productUpdate(input: $input)" json:"productUpdate"`
+	} `graphql:"productUpdate(product: $product, media: $media)" json:"productUpdate"`
 }
 
 type mutationProductDelete struct {
@@ -57,7 +57,7 @@ type mutationProductDelete struct {
 type mutationProductVariantsBulkCreate struct {
 	ProductVariantsBulkCreateResult struct {
 		UserErrors []model.UserError `json:"userErrors,omitempty"`
-	} `graphql:"productVariantsBulkCreate(productId: $productId, variants: $variants)" json:"productVariantsBulkCreate"`
+	} `graphql:"productVariantsBulkCreate(productId: $productId, variants: $variants, strategy: $strategy)" json:"productVariantsBulkCreate"`
 }
 
 type mutationProductVariantsBulkUpdate struct {
@@ -294,11 +294,12 @@ func (s *ProductServiceOp) getPage(ctx context.Context, id string, cursor string
 	return out.Product, nil
 }
 
-func (s *ProductServiceOp) Create(ctx context.Context, product model.ProductInput) (*string, error) {
+func (s *ProductServiceOp) Create(ctx context.Context, product model.ProductCreateInput, media []model.CreateMediaInput) (*string, error) {
 	m := mutationProductCreate{}
 
 	vars := map[string]interface{}{
-		"input": product,
+		"product": product,
+		"media":   media,
 	}
 
 	err := s.client.gql.Mutate(ctx, &m, vars)
@@ -313,11 +314,12 @@ func (s *ProductServiceOp) Create(ctx context.Context, product model.ProductInpu
 	return &m.ProductCreateResult.Product.ID, nil
 }
 
-func (s *ProductServiceOp) Update(ctx context.Context, product model.ProductInput) error {
+func (s *ProductServiceOp) Update(ctx context.Context, product model.ProductUpdateInput, media []model.CreateMediaInput) error {
 	m := mutationProductUpdate{}
 
 	vars := map[string]interface{}{
-		"input": product,
+		"product": product,
+		"media":   media,
 	}
 	err := s.client.gql.Mutate(ctx, &m, vars)
 	if err != nil {
@@ -349,12 +351,13 @@ func (s *ProductServiceOp) Delete(ctx context.Context, product model.ProductDele
 	return nil
 }
 
-func (s *ProductServiceOp) VariantsBulkCreate(ctx context.Context, id string, input []model.ProductVariantsBulkInput) error {
+func (s *ProductServiceOp) VariantsBulkCreate(ctx context.Context, id string, input []model.ProductVariantsBulkInput, strategy model.ProductVariantsBulkCreateStrategy) error {
 	m := mutationProductVariantsBulkCreate{}
 
 	vars := map[string]interface{}{
 		"productId": id,
 		"variants":  input,
+		"strategy":  strategy,
 	}
 	err := s.client.gql.Mutate(ctx, &m, vars)
 	if err != nil {

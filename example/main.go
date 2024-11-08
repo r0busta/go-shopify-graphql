@@ -9,7 +9,8 @@ func main() {
 	collections(client)
 
 	// Products
-	products(client)
+	listProducts(client)
+	// createProduct(client)
 
 	// Bulk operations
 	// bulk(client)
