@@ -36,18 +36,18 @@ func (m *MockProductService) EXPECT() *MockProductServiceMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockProductService) Create(arg0 context.Context, arg1 model.ProductInput) (*string, error) {
+func (m *MockProductService) Create(arg0 context.Context, arg1 model.ProductCreateInput, arg2 []model.CreateMediaInput) (*string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", arg0, arg1)
+	ret := m.ctrl.Call(m, "Create", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockProductServiceMockRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockProductServiceMockRecorder) Create(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockProductService)(nil).Create), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockProductService)(nil).Create), arg0, arg1, arg2)
 }
 
 // Delete mocks base method.
@@ -110,31 +110,31 @@ func (mr *MockProductServiceMockRecorder) ListAll(arg0 interface{}) *gomock.Call
 }
 
 // Update mocks base method.
-func (m *MockProductService) Update(arg0 context.Context, arg1 model.ProductInput) error {
+func (m *MockProductService) Update(arg0 context.Context, arg1 model.ProductUpdateInput, arg2 []model.CreateMediaInput) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", arg0, arg1)
+	ret := m.ctrl.Call(m, "Update", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockProductServiceMockRecorder) Update(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockProductServiceMockRecorder) Update(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockProductService)(nil).Update), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockProductService)(nil).Update), arg0, arg1, arg2)
 }
 
 // VariantsBulkCreate mocks base method.
-func (m *MockProductService) VariantsBulkCreate(arg0 context.Context, arg1 string, arg2 []model.ProductVariantsBulkInput) error {
+func (m *MockProductService) VariantsBulkCreate(arg0 context.Context, arg1 string, arg2 []model.ProductVariantsBulkInput, arg3 model.ProductVariantsBulkCreateStrategy) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VariantsBulkCreate", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "VariantsBulkCreate", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // VariantsBulkCreate indicates an expected call of VariantsBulkCreate.
-func (mr *MockProductServiceMockRecorder) VariantsBulkCreate(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockProductServiceMockRecorder) VariantsBulkCreate(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VariantsBulkCreate", reflect.TypeOf((*MockProductService)(nil).VariantsBulkCreate), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VariantsBulkCreate", reflect.TypeOf((*MockProductService)(nil).VariantsBulkCreate), arg0, arg1, arg2, arg3)
 }
 
 // VariantsBulkReorder mocks base method.
