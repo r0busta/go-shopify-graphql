@@ -142,7 +142,8 @@ var productQuery = fmt.Sprintf(`
 				inventoryQuantity
 				inventoryItem{
 					id
-					legacyResourceId							
+					legacyResourceId	
+					sku						
 				}
 				availableForSale
 			}
@@ -192,7 +193,8 @@ var productBulkQuery = fmt.Sprintf(`
 				inventoryQuantity
 				inventoryItem{
 					id
-					legacyResourceId							
+					legacyResourceId
+					sku							
 				}
 				availableForSale
 			}
