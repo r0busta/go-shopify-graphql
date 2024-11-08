@@ -128,6 +128,10 @@ var productQuery = fmt.Sprintf(`
 				selectedOptions{
 					name
 					value
+					optionValue{
+						id
+						name
+					}
 				}
 				position
 				image {
@@ -179,6 +183,10 @@ var productBulkQuery = fmt.Sprintf(`
 				selectedOptions{
 					name
 					value
+					optionValue{
+						id
+						name
+					}
 				}
 				position
 				image {
