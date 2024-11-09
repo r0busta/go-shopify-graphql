@@ -77,6 +77,7 @@ const productBaseQuery = `
 	legacyResourceId
 	handle
 	options{
+		id
 		name
 		values
 		position
