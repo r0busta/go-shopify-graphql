@@ -6,7 +6,7 @@ A simple client using the Shopify GraphQL Admin API.
 
 Hello World example
 
-### 0. Setup
+### 1. Setup
 
 ```bash
 export STORE_API_KEY=<private_app_api_key>
@@ -14,7 +14,7 @@ export STORE_PASSWORD=<private_app_access_token>
 export STORE_NAME=<store_name>
 ```
 
-### 1. Program
+### 2. Program
 
 ```go
 package main
