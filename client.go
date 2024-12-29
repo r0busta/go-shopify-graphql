@@ -3,20 +3,19 @@ package shopify
 import (
 	"os"
 
-	graphqlclient "github.com/r0busta/go-shopify-graphql/v8/graphql"
+	graphqlclient "github.com/r0busta/go-shopify-graphql/v9/graphql"
 	"github.com/r0busta/graphql"
 	log "github.com/sirupsen/logrus"
 )
 
 const (
-	defaultShopifyAPIVersion = "2022-04"
+	defaultShopifyAPIVersion = "2025-01"
 )
 
 type Client struct {
 	gql graphql.GraphQL
 
 	Product       ProductService
-	Variant       VariantService
 	Inventory     InventoryService
 	Collection    CollectionService
 	Order         OrderService
@@ -46,7 +45,6 @@ func NewClient(opts ...Option) *Client {
 	}
 
 	c.Product = &ProductServiceOp{client: c}
-	c.Variant = &VariantServiceOp{client: c}
 	c.Inventory = &InventoryServiceOp{client: c}
 	c.Collection = &CollectionServiceOp{client: c}
 	c.Order = &OrderServiceOp{client: c}
@@ -63,7 +61,7 @@ func NewDefaultClient() *Client {
 	accessToken := os.Getenv("STORE_PASSWORD")
 	storeName := os.Getenv("STORE_NAME")
 	if apiKey == "" || accessToken == "" || storeName == "" {
-		log.Fatalln("Shopify Admin API Key and/or Password (aka access token) and/or store name not set")
+		log.Fatalln("Shopify API key and/or password (aka access token) and/or store name not set")
 	}
 
 	gql := newShopifyGraphQLClientWithBasicAuth(apiKey, accessToken, storeName)
@@ -71,9 +69,13 @@ func NewDefaultClient() *Client {
 	return NewClient(WithGraphQLClient(gql))
 }
 
+func NewPrivateClient() *Client {
+	return NewClientWithToken(os.Getenv("STORE_PASSWORD"), os.Getenv("STORE_NAME"))
+}
+
 func NewClientWithToken(accessToken string, storeName string, opts ...Option) *Client {
 	if accessToken == "" || storeName == "" {
-		log.Fatalln("Shopify Admin API access token and/or store name not set")
+		log.Fatalln("Shopify API access token and/or store name not set")
 	}
 
 	gql := newShopifyGraphQLClientWithToken(accessToken, storeName)
