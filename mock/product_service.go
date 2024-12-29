@@ -109,6 +109,20 @@ func (mr *MockProductServiceMockRecorder) ListAll(arg0 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAll", reflect.TypeOf((*MockProductService)(nil).ListAll), arg0)
 }
 
+// MediaCreate mocks base method.
+func (m *MockProductService) MediaCreate(arg0 context.Context, arg1 string, arg2 []model.CreateMediaInput) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MediaCreate", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MediaCreate indicates an expected call of MediaCreate.
+func (mr *MockProductServiceMockRecorder) MediaCreate(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MediaCreate", reflect.TypeOf((*MockProductService)(nil).MediaCreate), arg0, arg1, arg2)
+}
+
 // Update mocks base method.
 func (m *MockProductService) Update(arg0 context.Context, arg1 model.ProductUpdateInput, arg2 []model.CreateMediaInput) error {
 	m.ctrl.T.Helper()
