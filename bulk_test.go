@@ -12,10 +12,11 @@ import (
 )
 
 func TestBulkOperationEndToEnd(t *testing.T) {
-	require.NotZero(t, os.Getenv("STORE_API_KEY"))
-	require.NotZero(t, os.Getenv("STORE_PASSWORD"))
-	require.NotZero(t, os.Getenv("STORE_NAME"))
-	require.NotZero(t, os.Getenv("STORE_ACCESS_TOKEN"))
+	for _, name := range []string{"STORE_API_KEY", "STORE_PASSWORD", "STORE_NAME", "STORE_ACCESS_TOKEN"} {
+		if os.Getenv(name) == "" {
+			t.Skipf("%s is not set; skipping end-to-end test against a live store", name)
+		}
+	}
 
 	tests := []struct {
 		name   string
