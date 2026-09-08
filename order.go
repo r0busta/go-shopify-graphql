@@ -105,7 +105,8 @@ const orderBaseQuery = `
 				currencyCode
 			}
 		}
-	}	
+	}
+	updatedAt
 `
 
 const orderLightQuery = `
