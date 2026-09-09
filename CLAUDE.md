@@ -1,7 +1,7 @@
 # go-shopify-graphql
 
 Go client for the Shopify GraphQL Admin API. Module path
-`github.com/r0busta/go-shopify-graphql/v9`.
+`github.com/r0busta/go-shopify-graphql/v10`.
 
 ## Layout
 
@@ -19,7 +19,7 @@ Go client for the Shopify GraphQL Admin API. Module path
 
 ## Dependencies to be aware of
 
-- Types come from `github.com/r0busta/go-shopify-graphql-model/v4`. The
+- Types come from `github.com/r0busta/go-shopify-graphql-model/v5`. The
   default API version in `client.go` must match the schema that model version
   was generated from. Changing either is a coordinated major-version bump.
 - `github.com/r0busta/graphql` is a fork of shurcooL/graphql maintained in

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/r0busta/go-shopify-graphql-model/v4/graph/model"
-	"github.com/r0busta/go-shopify-graphql/v9"
+	"github.com/r0busta/go-shopify-graphql-model/v5/graph/model"
+	"github.com/r0busta/go-shopify-graphql/v10"
 	"gopkg.in/guregu/null.v4"
 )
 

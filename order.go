@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/r0busta/go-shopify-graphql-model/v4/graph/model"
+	"github.com/r0busta/go-shopify-graphql-model/v5/graph/model"
 	"github.com/r0busta/graphql"
 )
 
@@ -310,7 +310,7 @@ func (s *OrderServiceOp) List(ctx context.Context, opts ListOptions) ([]model.Or
 func (s *OrderServiceOp) ListAll(ctx context.Context) ([]model.Order, error) {
 	q := fmt.Sprintf(`
 		{
-			orders(query: "$query"){
+			orders{
 				edges{
 					node{
 						%s
