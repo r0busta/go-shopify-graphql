@@ -27,7 +27,8 @@ var _ MetafieldService = &MetafieldServiceOp{}
 
 type mutationMetafieldsDelete struct {
 	MetafieldsDeleteResult struct {
-		UserErrors []model.UserError `json:"userErrors,omitempty"`
+		DeletedMetafields []*model.MetafieldIdentifier `json:"deletedMetafields,omitempty"`
+		UserErrors        []model.UserError            `json:"userErrors,omitempty"`
 	} `graphql:"metafieldsDelete(metafields: $metafields)" json:"metafieldsDelete"`
 }
 
@@ -138,9 +139,30 @@ func (s *MetafieldServiceOp) GetShopMetafieldByKey(ctx context.Context, namespac
 }
 
 // DeleteBulk deletes the given metafields in one metafieldsDelete mutation.
+// Identifiers that match no metafield are skipped without an error.
 func (s *MetafieldServiceOp) DeleteBulk(ctx context.Context, metafields []model.MetafieldIdentifierInput) error {
+	_, err := s.deleteMetafields(ctx, metafields)
+	return err
+}
+
+// Delete deletes one metafield and returns an error if it does not exist.
+func (s *MetafieldServiceOp) Delete(ctx context.Context, metafield model.MetafieldIdentifierInput) error {
+	deleted, err := s.deleteMetafields(ctx, []model.MetafieldIdentifierInput{metafield})
+	if err != nil {
+		return err
+	}
+	if len(deleted) == 0 || deleted[0] == nil {
+		return fmt.Errorf("metafield %s.%s on %s not found", metafield.Namespace, metafield.Key, metafield.OwnerID)
+	}
+
+	return nil
+}
+
+// deleteMetafields returns one entry per identifier, nil where no metafield
+// matched.
+func (s *MetafieldServiceOp) deleteMetafields(ctx context.Context, metafields []model.MetafieldIdentifierInput) ([]*model.MetafieldIdentifier, error) {
 	if len(metafields) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	m := mutationMetafieldsDelete{}
@@ -150,16 +172,12 @@ func (s *MetafieldServiceOp) DeleteBulk(ctx context.Context, metafields []model.
 	}
 	err := s.client.gql.Mutate(ctx, &m, vars)
 	if err != nil {
-		return fmt.Errorf("mutation: %w", err)
+		return nil, fmt.Errorf("mutation: %w", err)
 	}
 
 	if len(m.MetafieldsDeleteResult.UserErrors) > 0 {
-		return fmt.Errorf("%+v", m.MetafieldsDeleteResult.UserErrors)
+		return nil, fmt.Errorf("%+v", m.MetafieldsDeleteResult.UserErrors)
 	}
 
-	return nil
-}
-
-func (s *MetafieldServiceOp) Delete(ctx context.Context, metafield model.MetafieldIdentifierInput) error {
-	return s.DeleteBulk(ctx, []model.MetafieldIdentifierInput{metafield})
+	return m.MetafieldsDeleteResult.DeletedMetafields, nil
 }
