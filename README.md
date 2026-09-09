@@ -95,7 +95,8 @@ go test ./...
 
 The bulk operation test talks to a real store and is skipped unless
 `STORE_NAME`, `STORE_ACCESS_TOKEN`, `STORE_API_KEY` and `STORE_PASSWORD` are
-set. Copy `.env.example` to `.env` if you want to run it locally.
+exported. `.env.example` lists them; nothing loads a `.env` file for you, so
+source it yourself (for example `set -a; . ./.env; set +a`).
 
 ## Contributing
 
