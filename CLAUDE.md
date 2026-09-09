@@ -11,8 +11,14 @@ Go client for the Shopify GraphQL Admin API. Module path
   transport on top of `github.com/r0busta/graphql`.
 - One file per Shopify resource (`product.go`, `order.go`, ...). Each defines
   a `XxxService` interface, an `XxxServiceOp` implementation, and the query
-  strings it uses.
+  strings it uses. Prefer string queries over reflecting whole model structs
+  into a query; the model types are cyclic and the reflective builder in the
+  graphql fork never terminates on them.
 - `bulk.go`: bulk operations (submit, poll, download JSONL, decode).
+- `schema_test.go`: records the query each service method sends and
+  validates it against `schema.graphql` from the model module in use. If it
+  fails after a model bump, the query or mutation needs updating to the new
+  API version; do not loosen the test.
 - `mock/`: gomock mocks of the service interfaces, generated with
   `go generate ./...`. Regenerate after changing an interface.
 - `example/`: runnable examples, not part of the library API.
