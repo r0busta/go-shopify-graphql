@@ -7,7 +7,7 @@ merge.
 ## Before opening a pull request
 
 - Run `gofmt`, `go vet ./...` and `go test ./...`. CI runs the same checks.
-- Keep the module path as `github.com/r0busta/go-shopify-graphql/v9`. If you
+- Keep the module path as `github.com/r0busta/go-shopify-graphql/v10`. If you
   develop in a fork, use a `replace` directive locally instead of renaming the
   module in `go.mod`.
 - Keep pull requests focused. One feature or fix per PR is ideal.

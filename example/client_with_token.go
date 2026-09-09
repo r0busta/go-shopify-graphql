@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	shopify "github.com/r0busta/go-shopify-graphql/v9"
+	shopify "github.com/r0busta/go-shopify-graphql/v10"
 )
 
 func clientWithToken() *shopify.Client {

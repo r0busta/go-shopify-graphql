@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/r0busta/go-shopify-graphql-model/v4/graph/model"
+	"github.com/r0busta/go-shopify-graphql-model/v5/graph/model"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -14,10 +14,10 @@ type CollectionService interface {
 
 	Get(ctx context.Context, id string) (*model.Collection, error)
 
-	Create(ctx context.Context, collection model.CollectionInput) (*string, error)
-	CreateBulk(ctx context.Context, collections []model.CollectionInput) error
+	Create(ctx context.Context, collection model.CollectionCreateInput) (*string, error)
+	CreateBulk(ctx context.Context, collections []model.CollectionCreateInput) error
 
-	Update(ctx context.Context, collection model.CollectionInput) error
+	Update(ctx context.Context, collection model.CollectionUpdateInput) error
 }
 
 type CollectionServiceOp struct {
@@ -33,13 +33,13 @@ type mutationCollectionCreate struct {
 		} `json:"collection,omitempty"`
 
 		UserErrors []model.UserError `json:"userErrors,omitempty"`
-	} `graphql:"collectionCreate(input: $input)" json:"collectionCreate"`
+	} `graphql:"collectionCreate(collection: $collection)" json:"collectionCreate"`
 }
 
 type mutationCollectionUpdate struct {
-	CollectionCreateResult struct {
+	CollectionUpdateResult struct {
 		UserErrors []model.UserError `json:"userErrors,omitempty"`
-	} `graphql:"collectionUpdate(input: $input)" json:"collectionUpdate"`
+	} `graphql:"collectionUpdate(collection: $collection)" json:"collectionUpdate"`
 }
 
 var collectionQuery = `
@@ -136,7 +136,7 @@ func (s *CollectionServiceOp) getPage(ctx context.Context, id string, cursor str
 	return out.Collection, nil
 }
 
-func (s *CollectionServiceOp) CreateBulk(ctx context.Context, collections []model.CollectionInput) error {
+func (s *CollectionServiceOp) CreateBulk(ctx context.Context, collections []model.CollectionCreateInput) error {
 	for _, c := range collections {
 		_, err := s.client.Collection.Create(ctx, c)
 		if err != nil {
@@ -147,11 +147,11 @@ func (s *CollectionServiceOp) CreateBulk(ctx context.Context, collections []mode
 	return nil
 }
 
-func (s *CollectionServiceOp) Create(ctx context.Context, collection model.CollectionInput) (*string, error) {
+func (s *CollectionServiceOp) Create(ctx context.Context, collection model.CollectionCreateInput) (*string, error) {
 	m := mutationCollectionCreate{}
 
 	vars := map[string]interface{}{
-		"input": collection,
+		"collection": collection,
 	}
 	err := s.client.gql.Mutate(ctx, &m, vars)
 	if err != nil {
@@ -165,19 +165,19 @@ func (s *CollectionServiceOp) Create(ctx context.Context, collection model.Colle
 	return &m.CollectionCreateResult.Collection.ID, nil
 }
 
-func (s *CollectionServiceOp) Update(ctx context.Context, collection model.CollectionInput) error {
+func (s *CollectionServiceOp) Update(ctx context.Context, collection model.CollectionUpdateInput) error {
 	m := mutationCollectionUpdate{}
 
 	vars := map[string]interface{}{
-		"input": collection,
+		"collection": collection,
 	}
 	err := s.client.gql.Mutate(ctx, &m, vars)
 	if err != nil {
 		return fmt.Errorf("mutation: %w", err)
 	}
 
-	if len(m.CollectionCreateResult.UserErrors) > 0 {
-		return fmt.Errorf("%+v", m.CollectionCreateResult.UserErrors)
+	if len(m.CollectionUpdateResult.UserErrors) > 0 {
+		return fmt.Errorf("%+v", m.CollectionUpdateResult.UserErrors)
 	}
 
 	return nil

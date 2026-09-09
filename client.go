@@ -3,13 +3,13 @@ package shopify
 import (
 	"os"
 
-	graphqlclient "github.com/r0busta/go-shopify-graphql/v9/graphql"
+	graphqlclient "github.com/r0busta/go-shopify-graphql/v10/graphql"
 	"github.com/r0busta/graphql"
 	log "github.com/sirupsen/logrus"
 )
 
 const (
-	defaultShopifyAPIVersion = "2025-01"
+	defaultShopifyAPIVersion = "2026-07"
 )
 
 type Client struct {

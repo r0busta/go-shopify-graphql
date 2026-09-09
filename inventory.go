@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/r0busta/go-shopify-graphql-model/v4/graph/model"
+	"github.com/r0busta/go-shopify-graphql-model/v5/graph/model"
 )
 
 //go:generate mockgen -destination=./mock/inventory_service.go -package=mock . InventoryService
 type InventoryService interface {
 	Update(ctx context.Context, id string, input model.InventoryItemInput) error
-	Adjust(ctx context.Context, locationID string, input []model.InventoryAdjustQuantitiesInput) error
 	AdjustQuantities(ctx context.Context, reason, name string, referenceDocumentUri *string, changes []model.InventoryChangeInput) error
 	SetOnHandQuantities(ctx context.Context, reason string, referenceDocumentUri *string, setQuantities []model.InventorySetQuantityInput) error
 	ActivateInventory(ctx context.Context, locationID string, id string) error
@@ -26,12 +25,6 @@ type mutationInventoryItemUpdate struct {
 	InventoryItemUpdateResult struct {
 		UserErrors []model.UserError `json:"userErrors,omitempty"`
 	} `graphql:"inventoryItemUpdate(id: $id, input: $input)" json:"inventoryItemUpdate"`
-}
-
-type mutationInventoryBulkAdjustQuantityAtLocation struct {
-	InventoryBulkAdjustQuantityAtLocationResult struct {
-		UserErrors []model.UserError `json:"userErrors,omitempty"`
-	} `graphql:"inventoryBulkAdjustQuantityAtLocation(locationId: $locationId, inventoryItemAdjustments: $inventoryItemAdjustments)" json:"inventoryBulkAdjustQuantityAtLocation"`
 }
 
 type mutationInventoryActivate struct {
@@ -65,24 +58,6 @@ func (s *InventoryServiceOp) Update(ctx context.Context, id string, input model.
 
 	if len(m.InventoryItemUpdateResult.UserErrors) > 0 {
 		return fmt.Errorf("%+v", m.InventoryItemUpdateResult.UserErrors)
-	}
-
-	return nil
-}
-
-func (s *InventoryServiceOp) Adjust(ctx context.Context, locationID string, input []model.InventoryAdjustQuantitiesInput) error {
-	m := mutationInventoryBulkAdjustQuantityAtLocation{}
-	vars := map[string]interface{}{
-		"locationId":               locationID,
-		"inventoryItemAdjustments": input,
-	}
-	err := s.client.gql.Mutate(ctx, &m, vars)
-	if err != nil {
-		return fmt.Errorf("mutation: %w", err)
-	}
-
-	if len(m.InventoryBulkAdjustQuantityAtLocationResult.UserErrors) > 0 {
-		return fmt.Errorf("%+v", m.InventoryBulkAdjustQuantityAtLocationResult.UserErrors)
 	}
 
 	return nil

@@ -5,7 +5,7 @@ A simple Go client for the Shopify GraphQL Admin API.
 Objects and inputs come from
 [go-shopify-graphql-model](https://github.com/r0busta/go-shopify-graphql-model),
 which is generated from the Shopify Admin API schema. The client currently
-targets API version `2025-01` by default. When Shopify retires a version, it
+targets API version `2026-07` by default. When Shopify retires a version, it
 serves requests with the oldest supported version instead and reports the
 version actually used in the `X-Shopify-API-Version` response header.
 
@@ -31,7 +31,7 @@ import (
 	"fmt"
 	"os"
 
-	shopify "github.com/r0busta/go-shopify-graphql/v9"
+	shopify "github.com/r0busta/go-shopify-graphql/v10"
 )
 
 func main() {
@@ -60,13 +60,13 @@ To target a specific API version, build the underlying GraphQL client yourself:
 
 ```go
 import (
-	shopify "github.com/r0busta/go-shopify-graphql/v9"
-	graphqlclient "github.com/r0busta/go-shopify-graphql/v9/graphql"
+	shopify "github.com/r0busta/go-shopify-graphql/v10"
+	graphqlclient "github.com/r0busta/go-shopify-graphql/v10/graphql"
 )
 
 gql := graphqlclient.NewClient(storeName,
 	graphqlclient.WithToken(accessToken),
-	graphqlclient.WithVersion("2025-01"),
+	graphqlclient.WithVersion("2026-07"),
 )
 client := shopify.NewClient(shopify.WithGraphQLClient(gql))
 ```

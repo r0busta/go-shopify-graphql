@@ -14,9 +14,9 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/r0busta/go-shopify-graphql-model/v4/graph/model"
-	"github.com/r0busta/go-shopify-graphql/v9/rand"
-	"github.com/r0busta/go-shopify-graphql/v9/utils"
+	"github.com/r0busta/go-shopify-graphql-model/v5/graph/model"
+	"github.com/r0busta/go-shopify-graphql/v10/rand"
+	"github.com/r0busta/go-shopify-graphql/v10/utils"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/guregu/null.v4"
 )
@@ -204,7 +204,8 @@ func (s *BulkOperationServiceOp) BulkQuery(ctx context.Context, query string, ou
 	}
 
 	if url == nil || *url == "" {
-		return fmt.Errorf("Operation result URL is empty")
+		// The operation completed without returning any objects.
+		return nil
 	}
 
 	filename := fmt.Sprintf("%s%s", rand.String(10), ".jsonl")
